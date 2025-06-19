@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css");
 
 @tailwind base;
@@ -10,7 +10,9 @@
     @apply font-sans;
   }
   body {
-    @apply bg-gray-50 text-gray-800;
+    @apply bg-gray-900 text-gray-100 overflow-x-hidden;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    min-height: 100vh;
   }
   h1,
   h2,
@@ -18,7 +20,24 @@
   h4,
   h5,
   h6 {
-    @apply font-medium;
+    @apply font-semibold;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-800;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-600 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500;
   }
 }
 
@@ -26,56 +45,179 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .gradient-border {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    padding: 1px;
+    border-radius: 0.5rem;
+  }
+
+  .gradient-border-content {
+    background: #1e293b;
+    border-radius: calc(0.5rem - 1px);
+  }
 }
 
 @layer components {
   .btn {
-    @apply px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all duration-200 shadow-sm;
+    @apply px-6 py-3 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all duration-300 transform hover:scale-105;
   }
+
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700 hover:shadow-md focus:ring-primary-500;
+    @apply bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 focus:ring-red-500 shadow-lg hover:shadow-red-500/25;
   }
+
   .btn-secondary {
-    @apply bg-secondary-600 text-white hover:bg-secondary-700 hover:shadow-md focus:ring-secondary-500;
+    @apply bg-gray-700 text-gray-100 hover:bg-gray-600 focus:ring-gray-500 border border-gray-600;
   }
-  .btn-accent {
-    @apply bg-accent-500 text-white hover:bg-accent-600 hover:shadow-md focus:ring-accent-400;
-  }
+
   .btn-outline {
-    @apply border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-primary-500 focus:ring-primary-500;
+    @apply border border-gray-600 bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white focus:ring-red-500;
   }
+
   .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-md;
+    @apply glass-effect rounded-xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-1;
   }
+
+  .card-dark {
+    @apply bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-1;
+  }
+
   .input {
-    @apply w-full px-4 py-2.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors;
+    @apply w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-100 placeholder-gray-400 transition-all duration-200;
   }
-  .dashboard-stat {
-    @apply p-6 bg-white rounded-lg shadow-sm border-l-4 border-primary-500 hover:shadow-md transition-all duration-200;
+
+  .sidebar-item {
+    @apply flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-red-500/10 rounded-lg transition-all duration-200;
   }
-  .nav-link {
-    @apply flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors duration-200;
+
+  .sidebar-item.active {
+    @apply text-white bg-gradient-to-r from-red-500/20 to-red-600/20 border-r-2 border-red-500;
   }
-  .nav-link-active {
-    @apply bg-primary-50 text-primary-700 border-l-4 border-primary-600;
+
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
   }
-  .nav-link-inactive {
-    @apply text-gray-600 hover:bg-gray-50 hover:text-primary-600;
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out forwards;
   }
+
+  .animate-scale-in {
+    animation: scaleIn 0.4s ease-out forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* Form elements */
 input,
 select,
 textarea {
-  @apply focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200;
+  @apply focus:ring-red-500 focus:border-red-500 bg-gray-800/50 border-gray-600 text-gray-100;
+}
+
+input::placeholder,
+textarea::placeholder {
+  @apply text-gray-400;
 }
 
 button {
-  @apply transition-all duration-200;
+  @apply transition-all duration-300;
 }
 
-/* Animations */
-.hover-lift {
-  @apply transition-transform duration-200 hover:-translate-y-1;
+/* Loading spinner */
+.spinner {
+  @apply animate-spin rounded-full border-t-2 border-b-2 border-red-500;
+}
+
+/* Status badges */
+.status-active {
+  @apply bg-green-500/20 text-green-400 border border-green-500/30;
+}
+
+.status-paid {
+  @apply bg-blue-500/20 text-blue-400 border border-blue-500/30;
+}
+
+.status-defaulted {
+  @apply bg-red-500/20 text-red-400 border border-red-500/30;
+}
+
+/* Progress bars */
+.progress-bar {
+  @apply bg-gray-700 rounded-full overflow-hidden;
+}
+
+.progress-fill {
+  @apply bg-gradient-to-r from-red-500 to-red-600 h-full transition-all duration-1000 ease-out;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  @apply fixed inset-0 bg-black/60 backdrop-blur-sm z-50;
+}
+
+/* Hover effects */
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+/* Text gradients */
+.text-gradient {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

@@ -59,3 +59,47 @@ async def get_loan(loan_id: str, current_user = Depends(auth_service.get_current
         raise HTTPException(status_code=403, detail="Not authorized to access this loan")
     
     return loan
+
+@router.put("/{loan_id}", response_model=Loan)
+async def update_loan(loan_id: str, loan_update: LoanCreate, current_user = Depends(auth_service.get_current_user)):
+    if loan_id not in loans_db:
+        raise HTTPException(status_code=404, detail="Loan not found")
+    
+    existing_loan = loans_db[loan_id]
+    if existing_loan["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Not authorized to update this loan")
+    
+    # Recalculate total amount and monthly payment with new values
+    principal = loan_update.amount
+    rate = loan_update.interest_rate / 100 / 12  # Monthly interest rate
+    term = loan_update.term_months
+    
+    # Formula for monthly payment: P * r * (1 + r)^n / ((1 + r)^n - 1)
+    monthly_payment = principal * rate * (1 + rate)**term / ((1 + rate)**term - 1)
+    total_amount = monthly_payment * term
+    
+    # Update loan data
+    loans_db[loan_id].update({
+        "title": loan_update.title,
+        "amount": loan_update.amount,
+        "interest_rate": loan_update.interest_rate,
+        "term_months": loan_update.term_months,
+        "start_date": loan_update.start_date,
+        "description": loan_update.description,
+        "total_amount": total_amount,
+        "monthly_payment": monthly_payment,
+    })
+    
+    return loans_db[loan_id]
+
+@router.delete("/{loan_id}")
+async def delete_loan(loan_id: str, current_user = Depends(auth_service.get_current_user)):
+    if loan_id not in loans_db:
+        raise HTTPException(status_code=404, detail="Loan not found")
+    
+    loan = loans_db[loan_id]
+    if loan["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this loan")
+    
+    del loans_db[loan_id]
+    return {"message": "Loan deleted successfully"}

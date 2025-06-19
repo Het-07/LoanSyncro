@@ -11,6 +11,25 @@ router = APIRouter()
 # In-memory storage for repayments
 repayments_db = {}
 
+def update_loan_status(loan_id: str):
+    """Update loan status based on total repayments"""
+    if loan_id not in loans_db:
+        return
+    
+    loan = loans_db[loan_id]
+    
+    # Calculate total repayments for this loan
+    total_repaid = sum(
+        repayment["amount"] for repayment in repayments_db.values()
+        if repayment["loan_id"] == loan_id
+    )
+    
+    # Update loan status based on repayment progress
+    if total_repaid >= loan["total_amount"]:
+        loans_db[loan_id]["status"] = "paid"
+    elif total_repaid > 0:
+        loans_db[loan_id]["status"] = "active"
+
 @router.post("/", response_model=Repayment, status_code=status.HTTP_201_CREATED)
 async def create_repayment(repayment: RepaymentCreate, current_user = Depends(auth_service.get_current_user)):
     # Verify loan exists and belongs to user
@@ -32,10 +51,30 @@ async def create_repayment(repayment: RepaymentCreate, current_user = Depends(au
         "created_at": datetime.utcnow()
     }
     
-    if repayment_id not in repayments_db:
-        repayments_db[repayment_id] = repayment_data
+    repayments_db[repayment_id] = repayment_data
+    
+    # Update loan status after adding repayment
+    update_loan_status(loan_id)
     
     return repayment_data
+
+@router.get("/", response_model=List[Repayment])
+async def get_all_repayments(current_user = Depends(auth_service.get_current_user)):
+    """Get all repayments for the current user"""
+    user_id = current_user["id"]
+    
+    # Get all loans for the user first
+    user_loan_ids = [loan["id"] for loan in loans_db.values() 
+                    if loan["user_id"] == user_id]
+    
+    # Get all repayments for the user's loans
+    user_repayments = [repayment for repayment in repayments_db.values() 
+                      if repayment["loan_id"] in user_loan_ids]
+    
+    # Sort by payment date (most recent first)
+    user_repayments.sort(key=lambda x: x["payment_date"], reverse=True)
+    
+    return user_repayments
 
 @router.get("/loan/{loan_id}", response_model=List[Repayment])
 async def get_loan_repayments(loan_id: str, current_user = Depends(auth_service.get_current_user)):
@@ -48,6 +87,10 @@ async def get_loan_repayments(loan_id: str, current_user = Depends(auth_service.
     
     loan_repayments = [repayment for repayment in repayments_db.values() 
                       if repayment["loan_id"] == loan_id]
+    
+    # Sort by payment date (most recent first)
+    loan_repayments.sort(key=lambda x: x["payment_date"], reverse=True)
+    
     return loan_repayments
 
 @router.get("/summary", response_model=Summary)
