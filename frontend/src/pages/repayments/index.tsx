@@ -4,10 +4,12 @@ import type React from "react";
 
 import { useState, useEffect } from "react";
 import { repaymentService, loanService } from "../../services/api";
+import { useAuth } from "../../hooks/useAuth";
 import type { Repayment } from "../../types/repayment";
 import type { Loan } from "../../types/loan";
 
 export default function RepaymentsPage() {
+  const { user } = useAuth();
   const [repayments, setRepayments] = useState<Repayment[]>([]);
   const [loans, setLoans] = useState<Record<string, Loan>>({});
   const [loading, setLoading] = useState(true);
@@ -159,62 +161,88 @@ export default function RepaymentsPage() {
 
   if (loading && !repayments.length) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="animate-fade-in">
+          <h1 className="text-4xl font-bold text-gray-200 mb-2">Repayments</h1>
+          <p className="text-gray-400 text-lg">
+            Track and manage your loan repayments
+          </p>
+        </div>
+
+        <div className="flex justify-center items-center h-64">
+          <div className="relative">
+            <div className="w-12 h-12 border-4 border-gray-700 border-t-red-500 rounded-full animate-spin"></div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">
-          Repayments
-        </h1>
-        <button
-          onClick={() => setShowForm(true)}
-          className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-        >
-          <i className="fas fa-plus mr-2"></i> Record Repayment
-        </button>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="animate-fade-in">
+        <h1 className="text-4xl font-bold text-gray-200 mb-2">Repayments</h1>
+        <p className="text-gray-400 text-lg">
+          Track and manage your loan repayments
+        </p>
       </div>
 
-      <div className="mb-6">
-        <div className="mt-1 relative rounded-md shadow-sm">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <i className="fas fa-search text-gray-400"></i>
+      {/* Actions Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 animate-slide-up">
+        <div className="w-full sm:w-96">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i className="fas fa-search text-gray-400"></i>
+            </div>
+            <input
+              type="text"
+              className="input pl-10"
+              placeholder="Search repayments by loan..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <input
-            type="text"
-            className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
-            placeholder="Search repayments by loan..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
         </div>
+        <button
+          onClick={() => setShowForm(true)}
+          className="btn btn-primary whitespace-nowrap"
+        >
+          <i className="fas fa-plus mr-2"></i>
+          Record Repayment
+        </button>
       </div>
 
       {error && (
         <div
-          className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
+          className="card-dark p-6 border-red-500/20 animate-scale-in"
           role="alert"
         >
-          <span className="block sm:inline">{error}</span>
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <i className="fas fa-exclamation-triangle text-red-400 text-xl"></i>
+            </div>
+            <div className="ml-4">
+              <h3 className="text-lg font-semibold text-red-400">Error</h3>
+              <p className="text-gray-300 mt-1">{error}</p>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Repayment Form */}
       {showForm && (
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-medium text-gray-900">
+        <div className="card-dark p-6 animate-scale-in">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-200">
               Record New Repayment
             </h2>
             <button
               onClick={() => setShowForm(false)}
-              className="text-gray-400 hover:text-gray-500"
+              className="text-gray-400 hover:text-gray-300 transition-colors"
             >
-              <i className="fas fa-times"></i>
+              <i className="fas fa-times text-xl"></i>
             </button>
           </div>
 
@@ -223,9 +251,9 @@ export default function RepaymentsPage() {
               <div>
                 <label
                   htmlFor="loan_id"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-300 mb-2"
                 >
-                  Select Loan <span className="text-red-500">*</span>
+                  Select Loan <span className="text-red-400">*</span>
                 </label>
                 <select
                   id="loan_id"
@@ -233,7 +261,7 @@ export default function RepaymentsPage() {
                   required
                   value={formData.loan_id}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  className="input"
                 >
                   <option value="">-- Select a loan --</option>
                   {Object.values(loans)
@@ -250,9 +278,9 @@ export default function RepaymentsPage() {
               <div>
                 <label
                   htmlFor="amount"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-300 mb-2"
                 >
-                  Payment Amount ($) <span className="text-red-500">*</span>
+                  Payment Amount ($) <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="number"
@@ -263,16 +291,16 @@ export default function RepaymentsPage() {
                   required
                   value={formData.amount}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  className="input"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="payment_date"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-300 mb-2"
                 >
-                  Payment Date <span className="text-red-500">*</span>
+                  Payment Date <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="date"
@@ -281,41 +309,41 @@ export default function RepaymentsPage() {
                   required
                   value={formData.payment_date}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  className="input"
                 />
               </div>
 
               <div className="md:col-span-2">
                 <label
                   htmlFor="notes"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-300 mb-2"
                 >
                   Notes
                 </label>
                 <textarea
                   id="notes"
                   name="notes"
-                  rows={2}
+                  rows={3}
                   value={formData.notes}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  className="input resize-none"
                   placeholder="Any additional details about this payment"
                 ></textarea>
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end space-x-3">
+            <div className="mt-8 flex justify-end space-x-4">
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+                className="btn btn-outline"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className={`px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
+                className={`btn btn-primary ${
                   loading ? "opacity-70 cursor-not-allowed" : ""
                 }`}
               >
@@ -326,169 +354,167 @@ export default function RepaymentsPage() {
         </div>
       )}
 
-      {/* Repayments List - Card Style */}
+      {/* Repayments List */}
       {Object.keys(groupedRepayments).length > 0 ? (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <ul className="divide-y divide-gray-200">
+        <div
+          className="card-dark animate-slide-up"
+          style={{ animationDelay: "0.2s" }}
+        >
+          <div className="divide-y divide-gray-700/50">
             {Object.entries(groupedRepayments).map(
-              ([loanId, loanRepayments]) => {
+              ([loanId, loanRepayments], index) => {
                 const loan = loans[loanId];
                 const totalRepaid = getTotalRepaidForLoan(loanId);
                 const remainingBalance = getRemainingBalance(loanId);
 
                 return (
-                  <li key={loanId}>
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <div className="sm:flex sm:items-center">
-                          <p className="text-lg font-medium text-primary-600 truncate">
-                            {loan?.title || "Unknown Loan"}
-                          </p>
-                          <div className="mt-2 sm:mt-0 sm:ml-6 flex items-center">
-                            <span
-                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                loan?.status === "active"
-                                  ? "bg-green-100 text-green-800"
-                                  : loan?.status === "paid"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {loan?.status?.charAt(0).toUpperCase() +
-                                loan?.status?.slice(1) || "Unknown"}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                          <p>
-                            {loanRepayments.length} payment
-                            {loanRepayments.length !== 1 ? "s" : ""}
-                          </p>
+                  <div
+                    key={loanId}
+                    className="p-6 animate-fade-in"
+                    style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="sm:flex sm:items-center">
+                        <p className="text-lg font-medium text-gray-200 truncate">
+                          {loan?.title || "Unknown Loan"}
+                        </p>
+                        <div className="mt-2 sm:mt-0 sm:ml-6 flex items-center">
+                          <span
+                            className={`px-3 py-1 text-xs leading-5 font-semibold rounded-full ${
+                              loan?.status === "active"
+                                ? "status-active"
+                                : loan?.status === "paid"
+                                ? "status-paid"
+                                : "status-defaulted"
+                            }`}
+                          >
+                            {loan?.status?.charAt(0).toUpperCase() +
+                              loan?.status?.slice(1) || "Unknown"}
+                          </span>
                         </div>
                       </div>
+                      <div className="mt-2 flex items-center text-sm text-gray-400 sm:mt-0">
+                        <p>
+                          {loanRepayments.length} payment
+                          {loanRepayments.length !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                    </div>
 
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-2">
-                          <div>
-                            <div className="text-xs text-gray-500">
-                              Total Repaid
-                            </div>
-                            <div className="text-sm font-medium text-green-600">
-                              {formatCurrency(totalRepaid)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-gray-500">
-                              Remaining Balance
-                            </div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {formatCurrency(remainingBalance)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-gray-500">
-                              Last Payment
-                            </div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {formatDate(loanRepayments[0].payment_date)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-gray-500">
-                              Progress
-                            </div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {loan
-                                ? Math.round(
-                                    (totalRepaid / loan.total_amount) * 100
-                                  )
-                                : 0}
-                              %
-                            </div>
-                          </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <div className="text-xs text-gray-400">
+                          Total Repaid
+                        </div>
+                        <div className="text-sm font-medium text-green-400">
+                          {formatCurrency(totalRepaid)}
                         </div>
                       </div>
-
-                      {/* Progress Bar */}
-                      <div className="mt-4">
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-primary-600 h-2 rounded-full"
-                            style={{
-                              width: `${
-                                loan
-                                  ? Math.min(
-                                      100,
-                                      (totalRepaid / loan.total_amount) * 100
-                                    )
-                                  : 0
-                              }%`,
-                            }}
-                          ></div>
+                      <div>
+                        <div className="text-xs text-gray-400">
+                          Remaining Balance
+                        </div>
+                        <div className="text-sm font-medium text-gray-200">
+                          {formatCurrency(remainingBalance)}
                         </div>
                       </div>
-
-                      {/* Individual Payments */}
-                      <div className="mt-4">
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">
-                          Recent Payments:
-                        </h4>
-                        <div className="space-y-2">
-                          {loanRepayments.slice(0, 3).map((repayment) => (
-                            <div
-                              key={repayment.id}
-                              className="flex justify-between items-center text-sm"
-                            >
-                              <div>
-                                <span className="text-gray-600">
-                                  {formatDate(repayment.payment_date)}
-                                </span>
-                                {repayment.notes && (
-                                  <span className="text-gray-400 ml-2">
-                                    - {repayment.notes}
-                                  </span>
-                                )}
-                              </div>
-                              <span className="font-medium text-green-600">
-                                {formatCurrency(repayment.amount)}
-                              </span>
-                            </div>
-                          ))}
-                          {loanRepayments.length > 3 && (
-                            <div className="text-xs text-gray-500">
-                              ... and {loanRepayments.length - 3} more payment
-                              {loanRepayments.length - 3 !== 1 ? "s" : ""}
-                            </div>
-                          )}
+                      <div>
+                        <div className="text-xs text-gray-400">
+                          Last Payment
+                        </div>
+                        <div className="text-sm font-medium text-gray-200">
+                          {formatDate(loanRepayments[0].payment_date)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-400">Progress</div>
+                        <div className="text-sm font-medium text-gray-200">
+                          {loan
+                            ? Math.round(
+                                (totalRepaid / loan.total_amount) * 100
+                              )
+                            : 0}
+                          %
                         </div>
                       </div>
                     </div>
-                  </li>
+
+                    {/* Progress Bar */}
+                    <div className="mb-4">
+                      <div className="progress-bar h-2">
+                        <div
+                          className="progress-fill"
+                          style={{
+                            width: `${
+                              loan
+                                ? Math.min(
+                                    100,
+                                    (totalRepaid / loan.total_amount) * 100
+                                  )
+                                : 0
+                            }%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Individual Payments */}
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-300 mb-3">
+                        Recent Payments:
+                      </h4>
+                      <div className="space-y-2">
+                        {loanRepayments.slice(0, 3).map((repayment) => (
+                          <div
+                            key={repayment.id}
+                            className="flex justify-between items-center text-sm p-3 bg-gray-700/20 rounded-lg"
+                          >
+                            <div>
+                              <span className="text-gray-300">
+                                {formatDate(repayment.payment_date)}
+                              </span>
+                              {repayment.notes && (
+                                <span className="text-gray-400 ml-2">
+                                  - {repayment.notes}
+                                </span>
+                              )}
+                            </div>
+                            <span className="font-medium text-green-400">
+                              {formatCurrency(repayment.amount)}
+                            </span>
+                          </div>
+                        ))}
+                        {loanRepayments.length > 3 && (
+                          <div className="text-xs text-gray-400 text-center py-2">
+                            ... and {loanRepayments.length - 3} more payment
+                            {loanRepayments.length - 3 !== 1 ? "s" : ""}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 );
               }
             )}
-          </ul>
+          </div>
         </div>
       ) : (
-        <div className="text-center py-12 bg-white rounded-lg shadow">
-          <i className="fas fa-credit-card text-5xl text-gray-300 mb-4"></i>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">
+        <div className="text-center py-12 card-dark animate-scale-in">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gray-800/50 flex items-center justify-center">
+            <i className="fas fa-credit-card text-3xl text-gray-500"></i>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-200 mb-2">
             No repayments recorded
           </h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="text-gray-400 mb-6">
             {searchTerm
               ? "Try a different search term"
               : "Get started by recording your first repayment"}
           </p>
-          <div className="mt-6">
-            <button
-              onClick={() => setShowForm(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              <i className="fas fa-plus mr-2"></i>
-              Record Repayment
-            </button>
-          </div>
+          <button onClick={() => setShowForm(true)} className="btn btn-primary">
+            <i className="fas fa-plus mr-2"></i>
+            Record Repayment
+          </button>
         </div>
       )}
     </div>

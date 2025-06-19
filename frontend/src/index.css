@@ -8,12 +8,21 @@
 @layer base {
   html {
     @apply font-sans;
+    height: 100%;
   }
   body {
-    @apply bg-gray-900 text-gray-100 overflow-x-hidden;
+    @apply bg-gray-900 text-gray-100;
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-    min-height: 100vh;
+    height: 100%;
+    margin: 0;
+    padding: 0;
   }
+
+  #root {
+    height: 100vh;
+    overflow-x: hidden;
+  }
+
   h1,
   h2,
   h3,
@@ -62,6 +71,11 @@
     background: #1e293b;
     border-radius: calc(0.5rem - 1px);
   }
+
+  .viewport-height {
+    height: calc(100vh - 4rem); /* Subtract navbar height */
+    overflow-y: auto;
+  }
 }
 
 @layer components {
@@ -94,7 +108,7 @@
   }
 
   .sidebar-item {
-    @apply flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-red-500/10 rounded-lg transition-all duration-200;
+    @apply flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-red-500/10 rounded-lg transition-all duration-200 group;
   }
 
   .sidebar-item.active {
@@ -114,6 +128,7 @@
   }
 }
 
+/* Custom animations */
 @keyframes fadeIn {
   from {
     opacity: 0;

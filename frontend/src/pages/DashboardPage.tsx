@@ -7,7 +7,7 @@ import { repaymentService } from "../services/api";
 import type { Summary } from "../types/repayment";
 import type { Loan } from "../types/loan";
 import { useLoans } from "../hooks/useLoans";
-import LoanDetailModal from "../components/loans/LoanDetailModal";
+import LoanDetailsModal from "../components/loans/LoanDetailModal";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -62,10 +62,25 @@ export default function DashboardPage() {
 
   if (loading || loansLoading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-gray-700 border-t-red-500 rounded-full animate-spin"></div>
-          <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-red-400 rounded-full animate-spin animate-pulse-slow"></div>
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="animate-fade-in">
+          <h1 className="text-4xl font-bold text-gray-200 mb-2">
+            Welcome back,{" "}
+            <span className="text-gradient">
+              {user?.full_name.split(" ")[0] || "User"}
+            </span>
+          </h1>
+          <p className="text-gray-400 text-lg">
+            Here's an overview of your loan portfolio
+          </p>
+        </div>
+
+        <div className="flex justify-center items-center h-96">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-gray-700 border-t-red-500 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-red-400 rounded-full animate-spin animate-pulse-slow"></div>
+          </div>
         </div>
       </div>
     );
@@ -73,16 +88,31 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="card-dark p-6 border-red-500/20 animate-scale-in">
-        <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <i className="fas fa-exclamation-triangle text-red-400 text-xl"></i>
-          </div>
-          <div className="ml-4">
-            <h3 className="text-lg font-semibold text-red-400">
-              Error Loading Dashboard
-            </h3>
-            <p className="text-gray-300 mt-1">{error}</p>
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="animate-fade-in">
+          <h1 className="text-4xl font-bold text-gray-200 mb-2">
+            Welcome back,{" "}
+            <span className="text-gradient">
+              {user?.full_name.split(" ")[0] || "User"}
+            </span>
+          </h1>
+          <p className="text-gray-400 text-lg">
+            Here's an overview of your loan portfolio
+          </p>
+        </div>
+
+        <div className="card-dark p-6 border-red-500/20 animate-scale-in">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <i className="fas fa-exclamation-triangle text-red-400 text-xl"></i>
+            </div>
+            <div className="ml-4">
+              <h3 className="text-lg font-semibold text-red-400">
+                Error Loading Dashboard
+              </h3>
+              <p className="text-gray-300 mt-1">{error}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -132,9 +162,11 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Header */}
       <div className="animate-fade-in">
-        <h1 className="text-4xl font-bold text-white mb-2">
+        <h1 className="text-4xl font-bold text-gray-200 mb-2">
           Welcome back,{" "}
-          <span className="text-gradient">{user?.full_name.split(" ")[0]}</span>
+          <span className="text-gradient">
+            {user?.full_name.split(" ")[0] || "User"}
+          </span>
         </h1>
         <p className="text-gray-400 text-lg">
           Here's an overview of your loan portfolio
@@ -154,7 +186,7 @@ export default function DashboardPage() {
                 <p className="text-sm font-medium text-gray-400 mb-1">
                   {card.title}
                 </p>
-                <p className="text-2xl font-bold text-white">{card.value}</p>
+                <p className="text-2xl font-bold text-gray-200">{card.value}</p>
               </div>
               <div className={`p-3 rounded-xl ${card.bgColor}`}>
                 <i
@@ -179,7 +211,9 @@ export default function DashboardPage() {
         <div className="p-6 border-b border-gray-700/50">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-xl font-semibold text-white">Recent Loans</h3>
+              <h3 className="text-xl font-semibold text-gray-200">
+                Recent Loans
+              </h3>
               <p className="text-gray-400 mt-1">Your latest loan activities</p>
             </div>
             <button
@@ -202,7 +236,7 @@ export default function DashboardPage() {
                   style={{ animationDelay: `${0.5 + index * 0.1}s` }}
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-white truncate flex-1 mr-2">
+                    <h4 className="text-lg font-semibold text-gray-200 truncate flex-1 mr-2">
                       {loan.title}
                     </h4>
                     <span
@@ -222,7 +256,7 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <p className="text-xs text-gray-400 mb-1">Principal</p>
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-sm font-semibold text-gray-200">
                         {formatCurrency(loan.amount)}
                       </p>
                     </div>
@@ -230,7 +264,7 @@ export default function DashboardPage() {
                       <p className="text-xs text-gray-400 mb-1">
                         Interest Rate
                       </p>
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-sm font-semibold text-gray-200">
                         {loan.interest_rate}%
                       </p>
                     </div>
@@ -244,7 +278,7 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-400 mb-1">Total</p>
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-sm font-semibold text-gray-200">
                         {formatCurrency(loan.total_amount)}
                       </p>
                     </div>
@@ -265,7 +299,7 @@ export default function DashboardPage() {
               <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gray-800/50 flex items-center justify-center">
                 <i className="fas fa-university text-3xl text-gray-500"></i>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">
+              <h3 className="text-xl font-semibold text-gray-200 mb-2">
                 No loans yet
               </h3>
               <p className="text-gray-400 mb-6">
@@ -285,7 +319,7 @@ export default function DashboardPage() {
 
       {/* Loan Details Modal */}
       {selectedLoan && (
-        <LoanDetailModal
+        <LoanDetailsModal
           loan={selectedLoan}
           isOpen={isModalOpen}
           onClose={handleCloseModal}
