@@ -70,3 +70,13 @@ output "frontend_url" {
   description = "Frontend application URL"
   value       = "https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.main.default_domain}"
 }
+
+output "debug_info" {
+  description = "Debug information for troubleshooting"
+  value = {
+    api_gateway_id = aws_api_gateway_rest_api.main.id
+    region = var.aws_region
+    stage = var.environment
+    full_api_url = "https://${aws_api_gateway_rest_api.main.id}.execute-api.${var.aws_region}.amazonaws.com/${var.environment}"
+  }
+}
