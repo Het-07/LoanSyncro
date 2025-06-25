@@ -1,6 +1,6 @@
 output "api_gateway_url" {
   description = "API Gateway endpoint URL"
-  value       = aws_api_gateway_deployment.main.invoke_url
+  value       = "https://${aws_api_gateway_rest_api.main.id}.execute-api.${var.aws_region}.amazonaws.com/${aws_api_gateway_deployment.main.stage_name}"
 }
 
 output "api_gateway_stage" {

@@ -46,39 +46,56 @@ def auth_handler(event, context):
         }
 
 def handle_register(event, headers):
-    """Handle user registration with Cognito"""
+    """Handle user registration with DynamoDB"""
     try:
         body = json.loads(event.get('body', '{}'))
         
-        cognito = boto3.client('cognito-idp')
+        # DynamoDB setup
+        dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+        users_table = dynamodb.Table(os.environ.get('DYNAMODB_USERS_TABLE', 'loansyncro-dev-users'))
         
-        # Create user in Cognito
-        response = cognito.admin_create_user(
-            UserPoolId=os.environ['COGNITO_USER_POOL_ID'],
-            Username=body['email'],
-            UserAttributes=[
-                {'Name': 'email', 'Value': body['email']},
-                {'Name': 'name', 'Value': body['full_name']},
-                {'Name': 'email_verified', 'Value': 'true'}
-            ],
-            TemporaryPassword=body['password'],
-            MessageAction='SUPPRESS'
-        )
+        # Check if user already exists
+        try:
+            response = users_table.query(
+                IndexName='email-index',
+                KeyConditionExpression='email = :email',
+                ExpressionAttributeValues={':email': body['email']}
+            )
+            if response['Items']:
+                return {
+                    'statusCode': 400,
+                    'headers': headers,
+                    'body': json.dumps({'error': 'Email already registered'})
+                }
+        except Exception as e:
+            print(f"Error checking existing user: {e}")
         
-        # Set permanent password
-        cognito.admin_set_user_password(
-            UserPoolId=os.environ['COGNITO_USER_POOL_ID'],
-            Username=body['email'],
-            Password=body['password'],
-            Permanent=True
-        )
+        # Create user
+        import uuid
+        import hashlib
+        
+        user_id = str(uuid.uuid4())
+        hashed_password = hashlib.sha256(body['password'].encode()).hexdigest()
+        
+        user_data = {
+            'id': user_id,
+            'email': body['email'],
+            'full_name': body['full_name'],
+            'password': hashed_password,
+            'created_at': datetime.utcnow().isoformat()
+        }
+        
+        users_table.put_item(Item=user_data)
+        
+        # Remove password from response
+        user_data.pop('password', None)
         
         return {
             'statusCode': 201,
             'headers': headers,
             'body': json.dumps({
                 'message': 'User registered successfully',
-                'user_id': response['User']['Username']
+                'user': user_data
             })
         }
     except Exception as e:
@@ -89,29 +106,70 @@ def handle_register(event, headers):
         }
 
 def handle_login(event, headers):
-    """Handle user login"""
+    """Handle user login with DynamoDB"""
     try:
-        body = json.loads(event.get('body', '{}'))
+        # Parse form data
+        body = event.get('body', '')
+        if event.get('headers', {}).get('content-type') == 'application/x-www-form-urlencoded':
+            from urllib.parse import parse_qs
+            parsed_body = parse_qs(body)
+            email = parsed_body.get('username', [''])[0]
+            password = parsed_body.get('password', [''])[0]
+        else:
+            parsed_body = json.loads(body)
+            email = parsed_body.get('email', '')
+            password = parsed_body.get('password', '')
         
-        cognito = boto3.client('cognito-idp')
+        # DynamoDB setup
+        dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+        users_table = dynamodb.Table(os.environ.get('DYNAMODB_USERS_TABLE', 'loansyncro-dev-users'))
         
-        response = cognito.admin_initiate_auth(
-            UserPoolId=os.environ['COGNITO_USER_POOL_ID'],
-            ClientId=os.environ['COGNITO_USER_POOL_CLIENT_ID'],
-            AuthFlow='ADMIN_NO_SRP_AUTH',
-            AuthParameters={
-                'USERNAME': body['email'],
-                'PASSWORD': body['password']
-            }
+        # Get user
+        response = users_table.query(
+            IndexName='email-index',
+            KeyConditionExpression='email = :email',
+            ExpressionAttributeValues={':email': email}
         )
+        
+        if not response['Items']:
+            return {
+                'statusCode': 401,
+                'headers': headers,
+                'body': json.dumps({'error': 'Invalid credentials'})
+            }
+        
+        user = response['Items'][0]
+        
+        # Verify password
+        import hashlib
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        
+        if user['password'] != hashed_password:
+            return {
+                'statusCode': 401,
+                'headers': headers,
+                'body': json.dumps({'error': 'Invalid credentials'})
+            }
+        
+        # Create JWT token (simplified)
+        import jwt
+        import time
+        
+        payload = {
+            'sub': user['email'],
+            'user_id': user['id'],
+            'exp': int(time.time()) + 3600  # 1 hour
+        }
+        
+        secret_key = os.environ.get('SECRET_KEY', 'temporary_secret_key_for_local_development')
+        token = jwt.encode(payload, secret_key, algorithm='HS256')
         
         return {
             'statusCode': 200,
             'headers': headers,
             'body': json.dumps({
-                'access_token': response['AuthenticationResult']['AccessToken'],
-                'id_token': response['AuthenticationResult']['IdToken'],
-                'refresh_token': response['AuthenticationResult']['RefreshToken']
+                'access_token': token,
+                'token_type': 'bearer'
             })
         }
     except Exception as e:
@@ -129,22 +187,32 @@ def handle_verify(event, headers):
             raise ValueError('Invalid authorization header')
         
         token = auth_header.split(' ')[1]
-        cognito = boto3.client('cognito-idp')
-        response = cognito.get_user(AccessToken=token)
         
-        user_attrs = {attr['Name']: attr['Value'] for attr in response['UserAttributes']}
+        # Verify JWT token
+        import jwt
+        secret_key = os.environ.get('SECRET_KEY', 'temporary_secret_key_for_local_development')
+        payload = jwt.decode(token, secret_key, algorithms=['HS256'])
+        
+        # Get user from DynamoDB
+        dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+        users_table = dynamodb.Table(os.environ.get('DYNAMODB_USERS_TABLE', 'loansyncro-dev-users'))
+        
+        response = users_table.query(
+            IndexName='email-index',
+            KeyConditionExpression='email = :email',
+            ExpressionAttributeValues={':email': payload['sub']}
+        )
+        
+        if not response['Items']:
+            raise ValueError('User not found')
+        
+        user = response['Items'][0]
+        user.pop('password', None)  # Remove password from response
         
         return {
             'statusCode': 200,
             'headers': headers,
-            'body': json.dumps({
-                'user': {
-                    'id': user_attrs.get('sub'),
-                    'email': user_attrs.get('email'),
-                    'full_name': user_attrs.get('name'),
-                    'created_at': datetime.utcnow().isoformat()
-                }
-            })
+            'body': json.dumps({'user': user})
         }
     except Exception as e:
         return {
@@ -153,15 +221,17 @@ def handle_verify(event, headers):
             'body': json.dumps({'error': 'Invalid token'})
         }
 
-# Copy the same pattern for loans_handler and repayments_handler
 def loans_handler(event, context):
-    """Loans handler - similar structure"""
+    """Loans handler"""
     headers = {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     }
+    
+    if event.get('httpMethod') == 'OPTIONS':
+        return {'statusCode': 200, 'headers': headers, 'body': ''}
     
     return {
         'statusCode': 200,
@@ -173,13 +243,16 @@ def loans_handler(event, context):
     }
 
 def repayments_handler(event, context):
-    """Repayments handler - similar structure"""
+    """Repayments handler"""
     headers = {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     }
+    
+    if event.get('httpMethod') == 'OPTIONS':
+        return {'statusCode': 200, 'headers': headers, 'body': ''}
     
     return {
         'statusCode': 200,

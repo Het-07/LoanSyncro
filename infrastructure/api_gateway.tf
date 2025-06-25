@@ -16,9 +16,15 @@ resource "aws_api_gateway_rest_api" "main" {
 resource "aws_api_gateway_deployment" "main" {
   depends_on = [
     aws_api_gateway_method.auth_post,
+    aws_api_gateway_method.auth_register_post,
+    aws_api_gateway_method.auth_login_post,
+    aws_api_gateway_method.auth_verify_get,
     aws_api_gateway_method.loans_any,
     aws_api_gateway_method.repayments_any,
     aws_api_gateway_integration.auth_integration,
+    aws_api_gateway_integration.auth_register_integration,
+    aws_api_gateway_integration.auth_login_integration,
+    aws_api_gateway_integration.auth_verify_integration,
     aws_api_gateway_integration.loans_integration,
     aws_api_gateway_integration.repayments_integration
   ]
@@ -30,14 +36,17 @@ resource "aws_api_gateway_deployment" "main" {
   triggers = {
     redeployment = sha1(jsonencode([
       aws_api_gateway_resource.auth.id,
+      aws_api_gateway_resource.auth_register.id,
+      aws_api_gateway_resource.auth_login.id,
+      aws_api_gateway_resource.auth_verify.id,
       aws_api_gateway_resource.loans.id,
       aws_api_gateway_resource.repayments.id,
       aws_api_gateway_method.auth_post.id,
+      aws_api_gateway_method.auth_register_post.id,
+      aws_api_gateway_method.auth_login_post.id,
+      aws_api_gateway_method.auth_verify_get.id,
       aws_api_gateway_method.loans_any.id,
-      aws_api_gateway_method.repayments_any.id,
-      aws_api_gateway_integration.auth_integration.id,
-      aws_api_gateway_integration.loans_integration.id,
-      aws_api_gateway_integration.repayments_integration.id,
+      aws_api_gateway_method.repayments_any.id
     ]))
   }
 
@@ -60,10 +69,129 @@ resource "aws_api_gateway_method" "auth_post" {
   authorization = "NONE"
 }
 
+# CORS for auth endpoint
+resource "aws_api_gateway_method" "auth_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.auth.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "auth_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.auth.id
+  http_method = aws_api_gateway_method.auth_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = jsonencode({
+      statusCode = 200
+    })
+  }
+}
+
+resource "aws_api_gateway_method_response" "auth_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.auth.id
+  http_method = aws_api_gateway_method.auth_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "auth_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.auth.id
+  http_method = aws_api_gateway_method.auth_options.http_method
+  status_code = aws_api_gateway_method_response.auth_options_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST,PUT,DELETE'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
 resource "aws_api_gateway_integration" "auth_integration" {
   rest_api_id = aws_api_gateway_rest_api.main.id
   resource_id = aws_api_gateway_resource.auth.id
   http_method = aws_api_gateway_method.auth_post.http_method
+
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.auth_handler.invoke_arn
+}
+
+# Auth sub-resources
+resource "aws_api_gateway_resource" "auth_register" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.auth.id
+  path_part   = "register"
+}
+
+resource "aws_api_gateway_resource" "auth_login" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.auth.id
+  path_part   = "login"
+}
+
+resource "aws_api_gateway_resource" "auth_verify" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.auth.id
+  path_part   = "verify"
+}
+
+# Methods for auth sub-resources
+resource "aws_api_gateway_method" "auth_register_post" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.auth_register.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_method" "auth_login_post" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.auth_login.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_method" "auth_verify_get" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.auth_verify.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+# Integrations for auth sub-resources
+resource "aws_api_gateway_integration" "auth_register_integration" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.auth_register.id
+  http_method = aws_api_gateway_method.auth_register_post.http_method
+
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.auth_handler.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "auth_login_integration" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.auth_login.id
+  http_method = aws_api_gateway_method.auth_login_post.http_method
+
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.auth_handler.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "auth_verify_integration" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.auth_verify.id
+  http_method = aws_api_gateway_method.auth_verify_get.http_method
 
   integration_http_method = "POST"
   type                    = "AWS_PROXY"

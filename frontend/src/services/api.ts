@@ -3,7 +3,7 @@ import type { Loan, LoanFormData } from "../types/loan"
 import type { Repayment, Summary } from "../types/repayment"
 import type { User } from "../types/auth"
 
-const API_URL = "http://localhost:8000"
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
 // Create axios instance
 const api: AxiosInstance = axios.create({

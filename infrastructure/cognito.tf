@@ -83,14 +83,9 @@ resource "aws_cognito_user_pool_client" "main" {
     "http://localhost:3000",
     "https://${local.name_prefix}.amplifyapp.com"
   ]
-
-  tags = merge(local.common_tags, {
-    Name    = "${local.name_prefix}-user-pool-client"
-    Service = "Authentication"
-  })
 }
 
-# Cognito Identity Pool
+# Cognito Identity Pool Client
 resource "aws_cognito_identity_pool" "main" {
   identity_pool_name               = "${local.name_prefix}-identity"
   allow_unauthenticated_identities = false

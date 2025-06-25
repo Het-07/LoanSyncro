@@ -15,8 +15,10 @@ resource "aws_dynamodb_table" "users" {
   }
 
   global_secondary_index {
-    name     = "email-index"
-    hash_key = "email"
+    name            = "email-index"
+    hash_key        = "email"
+    projection_type = "ALL"
+
   }
 
   # Security: Encryption at rest
@@ -54,8 +56,9 @@ resource "aws_dynamodb_table" "loans" {
   }
 
   global_secondary_index {
-    name     = "user-id-index"
-    hash_key = "user_id"
+    name            = "user-id-index"
+    hash_key        = "user_id"
+    projection_type = "ALL"
   }
 
   server_side_encryption {
@@ -91,8 +94,9 @@ resource "aws_dynamodb_table" "repayments" {
   }
 
   global_secondary_index {
-    name     = "loan-id-index"
-    hash_key = "loan_id"
+    name            = "loan-id-index"
+    hash_key        = "loan_id"
+    projection_type = "ALL"
   }
 
   server_side_encryption {
@@ -156,6 +160,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "storage" {
   rule {
     id     = "cost_optimization"
     status = "Enabled"
+
+    filter {
+      prefix = ""
+    }
 
     transition {
       days          = 30

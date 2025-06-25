@@ -87,6 +87,26 @@ resource "aws_iam_role_policy" "lambda_policy" {
           "kms:GenerateDataKey"
         ]
         Resource = aws_kms_key.main.arn
+       },
+      {
+        Effect = "Allow"
+        Action = [
+          "cognito-idp:AdminCreateUser",
+          "cognito-idp:AdminSetUserPassword",
+          "cognito-idp:AdminInitiateAuth",
+          "cognito-idp:GetUser",
+          "cognito-idp:AdminGetUser"
+        ]
+        Resource = [
+          aws_cognito_user_pool.main.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sns:Publish"
+        ]
+        Resource = aws_sns_topic.alerts.arn
       }
     ]
   })

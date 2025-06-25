@@ -45,7 +45,6 @@ resource "aws_lambda_function" "auth_handler" {
       SNS_TOPIC_ARN = aws_sns_topic.alerts.arn
       
       # General
-      AWS_REGION   = var.aws_region
       ENVIRONMENT  = var.environment
       PROJECT_NAME = var.project_name
     }
@@ -94,7 +93,6 @@ resource "aws_lambda_function" "loans_handler" {
       SNS_TOPIC_ARN = aws_sns_topic.alerts.arn
       
       # General
-      AWS_REGION   = var.aws_region
       ENVIRONMENT  = var.environment
       PROJECT_NAME = var.project_name
     }
@@ -141,7 +139,6 @@ resource "aws_lambda_function" "repayments_handler" {
       SNS_TOPIC_ARN = aws_sns_topic.alerts.arn
       
       # General
-      AWS_REGION   = var.aws_region
       ENVIRONMENT  = var.environment
       PROJECT_NAME = var.project_name
     }

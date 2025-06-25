@@ -2,7 +2,7 @@
 resource "aws_cloudwatch_log_group" "auth_logs" {
   name              = "/aws/lambda/${local.name_prefix}-auth"
   retention_in_days = var.log_retention_days
-  kms_key_id        = aws_kms_key.main.arn
+  # kms_key_id        = aws_kms_key.main.arn
 
   tags = merge(local.common_tags, {
     Name     = "${local.name_prefix}-auth-logs"
@@ -13,7 +13,7 @@ resource "aws_cloudwatch_log_group" "auth_logs" {
 resource "aws_cloudwatch_log_group" "loans_logs" {
   name              = "/aws/lambda/${local.name_prefix}-loans"
   retention_in_days = var.log_retention_days
-  kms_key_id        = aws_kms_key.main.arn
+  # kms_key_id        = aws_kms_key.main.arn
 
   tags = merge(local.common_tags, {
     Name     = "${local.name_prefix}-loans-logs"
@@ -24,7 +24,7 @@ resource "aws_cloudwatch_log_group" "loans_logs" {
 resource "aws_cloudwatch_log_group" "repayments_logs" {
   name              = "/aws/lambda/${local.name_prefix}-repayments"
   retention_in_days = var.log_retention_days
-  kms_key_id        = aws_kms_key.main.arn
+  # kms_key_id        = aws_kms_key.main.arn
 
   tags = merge(local.common_tags, {
     Name     = "${local.name_prefix}-repayments-logs"

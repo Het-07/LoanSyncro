@@ -1,7 +1,15 @@
+# Data source to retrieve GitHub token from SSM Parameter Store
+data "aws_ssm_parameter" "github_token" {
+  name = "/loansyncro/github-token"
+}
+
 # Amplify App
 resource "aws_amplify_app" "main" {
   name       = "${local.name_prefix}-frontend"
   repository = var.github_repository_url
+
+  # GitHub access token from SSM Parameter Store
+  access_token = data.aws_ssm_parameter.github_token.value
 
   # Build settings
   build_spec = <<-EOT
@@ -26,7 +34,7 @@ resource "aws_amplify_app" "main" {
 
   # Environment variables for frontend
   environment_variables = {
-    VITE_API_URL                     = aws_api_gateway_deployment.main.invoke_url
+    VITE_API_URL                     = "https://${aws_api_gateway_rest_api.main.id}.execute-api.${var.aws_region}.amazonaws.com/${var.environment}"
     VITE_AWS_REGION                  = var.aws_region
     VITE_COGNITO_USER_POOL_ID        = aws_cognito_user_pool.main.id
     VITE_COGNITO_USER_POOL_CLIENT_ID = aws_cognito_user_pool_client.main.id
@@ -53,7 +61,7 @@ resource "aws_amplify_branch" "main" {
   app_id      = aws_amplify_app.main.id
   branch_name = var.github_branch
   framework   = "React"
-  stage       = upper(var.environment)
+  stage       = "DEVELOPMENT"
 
   # Environment variables specific to this branch
   environment_variables = {
@@ -77,9 +85,4 @@ resource "aws_amplify_domain_association" "main" {
     branch_name = aws_amplify_branch.main.branch_name
     prefix      = var.environment == "prod" ? "" : var.environment
   }
-
-  tags = merge(local.common_tags, {
-    Name   = "${local.name_prefix}-domain"
-    Domain = var.custom_domain
-  })
 }
