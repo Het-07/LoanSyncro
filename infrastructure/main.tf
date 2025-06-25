@@ -14,6 +14,12 @@ terraform {
       version = "~> 3.0"
     }
   }
+
+  backend "s3" {
+    bucket = "loansyncro-terraform-state-1750810666"
+    key    = "loansyncro/terraform.tfstate"
+    region = "us-east-1"
+  }
 }
 
 # AWS Provider Configuration
@@ -41,3 +47,5 @@ resource "random_string" "suffix" {
 # Current AWS account and region data
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
+
+
