@@ -1,11 +1,11 @@
 output "api_gateway_url" {
   description = "API Gateway endpoint URL"
-  value       = "https://${aws_api_gateway_rest_api.main.id}.execute-api.${var.aws_region}.amazonaws.com/${aws_api_gateway_deployment.main.stage_name}"
+  value       = "https://${aws_api_gateway_rest_api.main.id}.execute-api.${var.aws_region}.amazonaws.com/${aws_api_gateway_stage.main.stage_name}"
 }
 
 output "api_gateway_stage" {
   description = "API Gateway stage name"
-  value       = aws_api_gateway_deployment.main.stage_name
+  value       = aws_api_gateway_stage.main.stage_name
 }
 
 output "dynamodb_tables" {
