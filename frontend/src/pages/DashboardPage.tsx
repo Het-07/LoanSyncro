@@ -41,7 +41,7 @@ export default function DashboardPage() {
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: "CAD",
     }).format(value);
   };
 
@@ -76,12 +76,12 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="flex justify-center items-center h-96">
+        {/* <div className="flex justify-center items-center h-96">
           <div className="relative">
             <div className="w-16 h-16 border-4 border-gray-700 border-t-red-500 rounded-full animate-spin"></div>
             <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-red-400 rounded-full animate-spin animate-pulse-slow"></div>
           </div>
-        </div>
+        </div> */}
       </div>
     );
   }

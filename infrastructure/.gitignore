@@ -1,0 +1,43 @@
+# Terraform files
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+terraform.tfvars.backup
+.terraform.lock.hcl
+terraform.tfplan
+terraform.tfplan.json
+
+# Lambda deployment packages
+*.zip
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# AWS credentials
+.aws/
+aws-credentials.json
+
+# Logs
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

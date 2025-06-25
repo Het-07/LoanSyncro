@@ -5,3 +5,4 @@ python-jose
 python-multipart
 pyjwt
 email-validator
+boto3

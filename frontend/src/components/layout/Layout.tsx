@@ -127,7 +127,7 @@ export default function Layout({ children }: LayoutProps) {
 
                 {/* Dropdown Menu */}
                 {isProfileDropdownOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-64 glass-effect border border-gray-700/50 rounded-xl shadow-2xl animate-scale-in">
+                  <div className="absolute top-full left-0 mt-2 w-64 glass-effect border border-gray-700/50 rounded-xl shadow-2xl animate-scale-in">
                     <div className="p-4 border-b border-gray-700/50">
                       <div className="flex items-center space-x-3">
                         <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-semibold text-sm">

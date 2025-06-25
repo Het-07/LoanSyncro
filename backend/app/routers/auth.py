@@ -10,7 +10,9 @@ router = APIRouter()
 
 @router.post("/register", response_model=User)
 async def register(user: UserCreate):
-    if auth_service.get_user(user.email):
+    # Check if user already exists
+    existing_user = auth_service.get_user(user.email)
+    if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
@@ -21,11 +23,20 @@ async def register(user: UserCreate):
         "id": user_id,
         "email": user.email,
         "full_name": user.full_name,
-        "password": user.password,  # In production, hash this
-        "created_at": datetime.utcnow()
+        "password": user.password,  # Will be hashed in auth_service
+        "created_at": datetime.utcnow().isoformat()
     }
-    auth_service.users_db[user.email] = user_data
-    return user_data
+    
+    created_user = auth_service.create_user(user_data)
+    if not created_user:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create user"
+        )
+    
+    # Remove password from response
+    created_user.pop('password', None)
+    return created_user
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
