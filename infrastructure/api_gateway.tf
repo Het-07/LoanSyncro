@@ -12,7 +12,18 @@ resource "aws_api_gateway_rest_api" "main" {
   })
 }
 
-# API Gateway Deployment
+# API Gateway Stage (replaces deprecated stage_name in deployment)
+resource "aws_api_gateway_stage" "main" {
+  deployment_id = aws_api_gateway_deployment.main.id
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  stage_name    = var.environment
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-api-stage"
+  })
+}
+
+# API Gateway Deployment (without deprecated stage_name)
 resource "aws_api_gateway_deployment" "main" {
   depends_on = [
     aws_api_gateway_method.auth_post,
@@ -21,16 +32,25 @@ resource "aws_api_gateway_deployment" "main" {
     aws_api_gateway_method.auth_verify_get,
     aws_api_gateway_method.loans_any,
     aws_api_gateway_method.repayments_any,
+    aws_api_gateway_method.auth_options,
+    aws_api_gateway_method.auth_register_options,
+    aws_api_gateway_method.auth_login_options,
+    aws_api_gateway_method.loans_options,
+    aws_api_gateway_method.repayments_options,
     aws_api_gateway_integration.auth_integration,
     aws_api_gateway_integration.auth_register_integration,
     aws_api_gateway_integration.auth_login_integration,
     aws_api_gateway_integration.auth_verify_integration,
     aws_api_gateway_integration.loans_integration,
-    aws_api_gateway_integration.repayments_integration
+    aws_api_gateway_integration.repayments_integration,
+    aws_api_gateway_integration.auth_options_integration,
+    aws_api_gateway_integration.auth_register_options_integration,
+    aws_api_gateway_integration.auth_login_options_integration,
+    aws_api_gateway_integration.loans_options_integration,
+    aws_api_gateway_integration.repayments_options_integration
   ]
 
   rest_api_id = aws_api_gateway_rest_api.main.id
-  stage_name  = var.environment
 
   # Force new deployment on changes
   triggers = {
@@ -46,7 +66,12 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_method.auth_login_post.id,
       aws_api_gateway_method.auth_verify_get.id,
       aws_api_gateway_method.loans_any.id,
-      aws_api_gateway_method.repayments_any.id
+      aws_api_gateway_method.repayments_any.id,
+      aws_api_gateway_method.auth_options.id,
+      aws_api_gateway_method.auth_register_options.id,
+      aws_api_gateway_method.auth_login_options.id,
+      aws_api_gateway_method.loans_options.id,
+      aws_api_gateway_method.repayments_options.id,
     ]))
   }
 
@@ -69,7 +94,7 @@ resource "aws_api_gateway_method" "auth_post" {
   authorization = "NONE"
 }
 
-# CORS for auth endpoint
+# CORS for auth endpoint (update existing)
 resource "aws_api_gateway_method" "auth_options" {
   rest_api_id   = aws_api_gateway_rest_api.main.id
   resource_id   = aws_api_gateway_resource.auth.id
@@ -198,6 +223,100 @@ resource "aws_api_gateway_integration" "auth_verify_integration" {
   uri                     = aws_lambda_function.auth_handler.invoke_arn
 }
 
+# Add CORS for auth/register
+resource "aws_api_gateway_method" "auth_register_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.auth_register.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "auth_register_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.auth_register.id
+  http_method = aws_api_gateway_method.auth_register_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = jsonencode({
+      statusCode = 200
+    })
+  }
+}
+
+resource "aws_api_gateway_method_response" "auth_register_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.auth_register.id
+  http_method = aws_api_gateway_method.auth_register_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "auth_register_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.auth_register.id
+  http_method = aws_api_gateway_method.auth_register_options.http_method
+  status_code = aws_api_gateway_method_response.auth_register_options_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST,PUT,DELETE'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+# Add CORS for auth/login
+resource "aws_api_gateway_method" "auth_login_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.auth_login.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "auth_login_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.auth_login.id
+  http_method = aws_api_gateway_method.auth_login_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = jsonencode({
+      statusCode = 200
+    })
+  }
+}
+
+resource "aws_api_gateway_method_response" "auth_login_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.auth_login.id
+  http_method = aws_api_gateway_method.auth_login_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "auth_login_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.auth_login.id
+  http_method = aws_api_gateway_method.auth_login_options.http_method
+  status_code = aws_api_gateway_method_response.auth_login_options_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST,PUT,DELETE'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
 # Loans Resource and Methods
 resource "aws_api_gateway_resource" "loans" {
   rest_api_id = aws_api_gateway_rest_api.main.id
@@ -222,6 +341,53 @@ resource "aws_api_gateway_integration" "loans_integration" {
   uri                    = aws_lambda_function.loans_handler.invoke_arn
 }
 
+# Add CORS for loans
+resource "aws_api_gateway_method" "loans_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.loans.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "loans_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.loans.id
+  http_method = aws_api_gateway_method.loans_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = jsonencode({
+      statusCode = 200
+    })
+  }
+}
+
+resource "aws_api_gateway_method_response" "loans_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.loans.id
+  http_method = aws_api_gateway_method.loans_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "loans_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.loans.id
+  http_method = aws_api_gateway_method.loans_options.http_method
+  status_code = aws_api_gateway_method_response.loans_options_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST,PUT,DELETE'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
 # Repayments Resource and Methods
 resource "aws_api_gateway_resource" "repayments" {
   rest_api_id = aws_api_gateway_rest_api.main.id
@@ -244,6 +410,53 @@ resource "aws_api_gateway_integration" "repayments_integration" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.repayments_handler.invoke_arn
+}
+
+# Add CORS for repayments
+resource "aws_api_gateway_method" "repayments_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.repayments.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "repayments_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.repayments.id
+  http_method = aws_api_gateway_method.repayments_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = jsonencode({
+      statusCode = 200
+    })
+  }
+}
+
+resource "aws_api_gateway_method_response" "repayments_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.repayments.id
+  http_method = aws_api_gateway_method.repayments_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "repayments_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.repayments.id
+  http_method = aws_api_gateway_method.repayments_options.http_method
+  status_code = aws_api_gateway_method_response.repayments_options_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST,PUT,DELETE'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
 }
 
 # Lambda Permissions for API Gateway

@@ -87,7 +87,7 @@ resource "aws_iam_role_policy" "lambda_policy" {
           "kms:GenerateDataKey"
         ]
         Resource = aws_kms_key.main.arn
-       },
+      },
       {
         Effect = "Allow"
         Action = [
