@@ -16,7 +16,6 @@ const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID
 
 // Validate required environment variables
 if (!userPoolId) {
-  console.error("❌ Missing VITE_COGNITO_USER_POOL_ID")
   console.log(
     "Available env vars:",
     Object.keys(import.meta.env).filter((key) => key.startsWith("VITE_")),
@@ -25,7 +24,6 @@ if (!userPoolId) {
 }
 
 if (!clientId) {
-  console.error("❌ Missing VITE_COGNITO_CLIENT_ID")
   console.log(
     "Available env vars:",
     Object.keys(import.meta.env).filter((key) => key.startsWith("VITE_")),
