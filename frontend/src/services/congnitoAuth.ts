@@ -16,10 +16,20 @@ const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID
 
 // Validate required environment variables
 if (!userPoolId) {
+  console.error("❌ Missing VITE_COGNITO_USER_POOL_ID")
+  console.log(
+    "Available env vars:",
+    Object.keys(import.meta.env).filter((key) => key.startsWith("VITE_")),
+  )
   throw new Error("VITE_COGNITO_USER_POOL_ID is required")
 }
 
 if (!clientId) {
+  console.error("❌ Missing VITE_COGNITO_CLIENT_ID")
+  console.log(
+    "Available env vars:",
+    Object.keys(import.meta.env).filter((key) => key.startsWith("VITE_")),
+  )
   throw new Error("VITE_COGNITO_CLIENT_ID is required")
 }
 
@@ -27,6 +37,7 @@ console.log("🔧 Cognito Config:", {
   region,
   userPoolId,
   clientId: clientId.substring(0, 8) + "...",
+  env: import.meta.env.MODE,
 })
 
 const cognitoClient = new CognitoIdentityProviderClient({
@@ -87,6 +98,7 @@ class CognitoAuthService {
 
       const response = await cognitoClient.send(command)
       console.log("✅ Registration successful:", response.UserSub)
+      console.log("📧 Confirmation needed:", !response.UserConfirmed)
 
       return {
         userSub: response.UserSub!,

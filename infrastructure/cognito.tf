@@ -1,4 +1,4 @@
-# Cognito User Pool
+# Cognito User Pool - FIXED: Enable email verification
 resource "aws_cognito_user_pool" "main" {
   name = "${local.name_prefix}-users"
 
@@ -36,9 +36,24 @@ resource "aws_cognito_user_pool" "main" {
     }
   }
 
-  # Email configuration
+  # FIXED: Email configuration for verification emails
   email_configuration {
     email_sending_account = "COGNITO_DEFAULT"
+  }
+
+  # FIXED: Auto-verified attributes
+  auto_verified_attributes = ["email"]
+
+  # FIXED: Email verification settings
+  verification_message_template {
+    default_email_option = "CONFIRM_WITH_CODE"
+    email_subject        = "LoanSyncro - Verify your email"
+    email_message        = "Welcome to LoanSyncro! Your verification code is {####}"
+  }
+
+  # FIXED: User pool add-ons
+  user_pool_add_ons {
+    advanced_security_mode = "OFF"  # Set to AUDIT or ENFORCED for production
   }
 
   tags = merge(local.common_tags, {
@@ -47,7 +62,7 @@ resource "aws_cognito_user_pool" "main" {
   })
 }
 
-# Cognito User Pool Client
+# Cognito User Pool Client - FIXED: Better configuration
 resource "aws_cognito_user_pool_client" "main" {
   name         = "${local.name_prefix}-client"
   user_pool_id = aws_cognito_user_pool.main.id
@@ -76,16 +91,21 @@ resource "aws_cognito_user_pool_client" "main" {
   
   callback_urls = [
     "http://localhost:3000",
-    "https://${local.name_prefix}.amplifyapp.com"
+    "https://${local.name_prefix}.amplifyapp.com",
+    "https://main.${aws_amplify_app.main.default_domain}"
   ]
   
   logout_urls = [
     "http://localhost:3000",
-    "https://${local.name_prefix}.amplifyapp.com"
+    "https://${local.name_prefix}.amplifyapp.com",
+    "https://main.${aws_amplify_app.main.default_domain}"
   ]
+
+  # FIXED: Prevent user existence errors
+  prevent_user_existence_errors = "ENABLED"
 }
 
-# Cognito Identity Pool Client
+# Cognito Identity Pool
 resource "aws_cognito_identity_pool" "main" {
   identity_pool_name               = "${local.name_prefix}-identity"
   allow_unauthenticated_identities = false
