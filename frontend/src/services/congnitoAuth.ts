@@ -12,7 +12,7 @@ import {
 
 const region = import.meta.env.VITE_AWS_REGION || "us-east-1"
 const userPoolId = import.meta.env.VITE_COGNITO_USER_POOL_ID
-const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID
+const userPoolClientId = import.meta.env.VITE_COGNITO_USER_POOL_CLIENT_ID
 
 // Validate required environment variables
 if (!userPoolId) {
@@ -23,18 +23,17 @@ if (!userPoolId) {
   throw new Error("VITE_COGNITO_USER_POOL_ID is required")
 }
 
-if (!clientId) {
+if (!userPoolClientId) {
   console.log(
     "Available env vars:",
     Object.keys(import.meta.env).filter((key) => key.startsWith("VITE_")),
   )
-  throw new Error("VITE_COGNITO_CLIENT_ID is required")
+  throw new Error("VITE_COGNITO_USER_POOL_CLIENT_ID is required")
 }
 
-console.log("🔧 Cognito Config:", {
+console.log("Cognito Config:", {
   region,
   userPoolId,
-  clientId: clientId.substring(0, 8) + "...",
   env: import.meta.env.MODE,
 })
 
@@ -65,7 +64,7 @@ class CognitoAuthService {
     fullName: string,
   ): Promise<{ userSub: string; needsConfirmation: boolean }> {
     try {
-      console.log("🔐 Registering user:", email)
+      console.log("Registering user:", email)
 
       // Validate inputs
       if (!email?.trim()) {
@@ -79,7 +78,7 @@ class CognitoAuthService {
       }
 
       const command = new SignUpCommand({
-        ClientId: clientId,
+        ClientId: userPoolClientId,
         Username: email.trim(),
         Password: password,
         UserAttributes: [
@@ -95,15 +94,15 @@ class CognitoAuthService {
       })
 
       const response = await cognitoClient.send(command)
-      console.log("✅ Registration successful:", response.UserSub)
-      console.log("📧 Confirmation needed:", !response.UserConfirmed)
+      console.log("Registration successful:", response.UserSub)
+      console.log("Confirmation needed:", !response.UserConfirmed)
 
       return {
         userSub: response.UserSub!,
         needsConfirmation: !response.UserConfirmed,
       }
     } catch (error: any) {
-      console.error("❌ Registration error:", error)
+      console.error("Registration error:", error)
       throw new Error(this.getErrorMessage(error))
     }
   }
@@ -111,7 +110,7 @@ class CognitoAuthService {
   // Confirm user registration with verification code
   async confirmSignUp(email: string, confirmationCode: string): Promise<void> {
     try {
-      console.log("📧 Confirming signup for:", email)
+      console.log("Confirming signup for:", email)
 
       if (!email?.trim()) {
         throw new Error("Email is required")
@@ -121,15 +120,15 @@ class CognitoAuthService {
       }
 
       const command = new ConfirmSignUpCommand({
-        ClientId: clientId,
+        ClientId: userPoolClientId,
         Username: email.trim(),
         ConfirmationCode: confirmationCode.trim(),
       })
 
       await cognitoClient.send(command)
-      console.log("✅ Email confirmation successful")
+      console.log("Email confirmation successful")
     } catch (error: any) {
-      console.error("❌ Confirmation error:", error)
+      console.error("Confirmation error:", error)
       throw new Error(this.getErrorMessage(error))
     }
   }
@@ -137,21 +136,21 @@ class CognitoAuthService {
   // Resend confirmation code
   async resendConfirmationCode(email: string): Promise<void> {
     try {
-      console.log("📨 Resending confirmation code to:", email)
+      console.log("Resending confirmation code to:", email)
 
       if (!email?.trim()) {
         throw new Error("Email is required")
       }
 
       const command = new ResendConfirmationCodeCommand({
-        ClientId: clientId,
+        ClientId: userPoolClientId,
         Username: email.trim(),
       })
 
       await cognitoClient.send(command)
-      console.log("✅ Confirmation code resent")
+      console.log("Confirmation code resent")
     } catch (error: any) {
-      console.error("❌ Resend confirmation error:", error)
+      console.error("Resend confirmation error:", error)
       throw new Error(this.getErrorMessage(error))
     }
   }
@@ -169,7 +168,7 @@ class CognitoAuthService {
       }
 
       const command = new InitiateAuthCommand({
-        ClientId: clientId,
+        ClientId: userPoolClientId,
         AuthFlow: "USER_PASSWORD_AUTH",
         AuthParameters: {
           USERNAME: email.trim(),
@@ -197,11 +196,11 @@ class CognitoAuthService {
 
       // Store tokens in localStorage
       this.storeTokens(tokens)
-      console.log("✅ Login successful")
+      console.log("Login successful")
 
       return tokens
     } catch (error: any) {
-      console.error("❌ Login error:", error)
+      console.error("Login error:", error)
       throw new Error(this.getErrorMessage(error))
     }
   }
@@ -214,7 +213,7 @@ class CognitoAuthService {
         throw new Error("No access token found")
       }
 
-      console.log("👤 Getting current user")
+      console.log("Getting current user")
 
       const command = new GetUserCommand({
         AccessToken: accessToken,
@@ -232,13 +231,13 @@ class CognitoAuthService {
         email: email,
         full_name: name,
         email_verified: emailVerified,
-        created_at: new Date().toISOString(), // Cognito doesn't provide this directly
+        created_at: new Date().toISOString(), 
       }
 
-      console.log("✅ User retrieved:", user.email)
+      console.log("User retrieved:", user.email)
       return user
     } catch (error: any) {
-      console.error("❌ Get user error:", error)
+      console.error("Get user error:", error)
       this.clearTokens() // Clear invalid tokens
       throw new Error(this.getErrorMessage(error))
     }
@@ -249,7 +248,7 @@ class CognitoAuthService {
     try {
       const accessToken = this.getAccessToken()
       if (accessToken) {
-        console.log("🚪 Signing out globally")
+        console.log("Signing out globally")
 
         const command = new GlobalSignOutCommand({
           AccessToken: accessToken,
@@ -258,11 +257,11 @@ class CognitoAuthService {
         await cognitoClient.send(command)
       }
     } catch (error) {
-      console.error("❌ Logout error:", error)
+      console.error("Logout error:", error)
       // Continue with local logout even if global logout fails
     } finally {
       this.clearTokens()
-      console.log("✅ Logout complete")
+      console.log("Logout complete")
     }
   }
 
