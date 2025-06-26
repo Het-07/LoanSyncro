@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useAuth } from "../../hooks/useAuth";
+import type React from "react";
+import { useState, useEffect } from "react";
 
 interface RegisterFormProps {
   onSubmit: (
@@ -39,7 +39,7 @@ export default function RegisterForm({
   useEffect(() => {
     setIsLengthValid(password.length >= 8);
     setHasUpperCase(/[A-Z]/.test(password));
-    setHasSymbol(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password));
+    setHasSymbol(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password));
     setHasNumber(/[0-9]/.test(password));
   }, [password]);
 
@@ -58,7 +58,15 @@ export default function RegisterForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Clear previous errors
+    setFormError("");
+
     // Form validation
+    if (!fullName.trim()) {
+      setFormError("Full name is required");
+      return;
+    }
+
     if (!validateEmail(email)) {
       setFormError("Please enter a valid email address");
       return;
@@ -74,8 +82,8 @@ export default function RegisterForm({
       return;
     }
 
-    setFormError("");
-    await onSubmit(email, password, fullName);
+    // Call the onSubmit function with trimmed values
+    await onSubmit(email.trim(), password, fullName.trim());
   };
 
   return (

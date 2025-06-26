@@ -1,22 +1,28 @@
 import axios, { type AxiosInstance } from "axios"
+import { cognitoAuthService } from "./congnitoAuth"
 import type { Loan, LoanFormData } from "../types/loan"
 import type { Repayment, Summary } from "../types/repayment"
-import type { User } from "../types/auth"
 
+// Get API URL from environment variables
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
+
+console.log("🌐 API_URL:", API_URL)
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
+  timeout: 10000, // 10 second timeout
 })
 
-// Request interceptor for adding auth token
+// Request interceptor for adding Cognito access token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token")
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    const accessToken = cognitoAuthService.getAccessToken()
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`
     }
+
+    console.log(`📡 ${config.method?.toUpperCase()} request to:`, config.url)
     return config
   },
   (error) => Promise.reject(error),
@@ -24,11 +30,17 @@ api.interceptors.request.use(
 
 // Response interceptor for handling errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`✅ Response from ${response.config.url}:`, response.status)
+    return response
+  },
   (error) => {
+    console.error("❌ API Error:", error.response?.status, error.response?.data)
+
     if (error.response && error.response.status === 401) {
-      // Unauthorized - clear token and redirect to login
-      localStorage.removeItem("token")
+      // Unauthorized - clear tokens and redirect to login
+      console.log("🚪 Unauthorized - redirecting to login")
+      cognitoAuthService.logout()
       window.location.href = "/login"
     }
     return Promise.reject(error)
@@ -51,21 +63,23 @@ export const repaymentService = {
   getSummary: () => api.get<Summary>("/repayments/summary"),
 }
 
+// Note: Auth service now uses Cognito directly, not API calls
 export const authService = {
-  login: (credentials: { email: string; password: string }) => {
-    const params = new URLSearchParams()
-    params.append("username", credentials.email)
-    params.append("password", credentials.password)
-
-    return api.post<{ access_token: string; token_type: string }>("/auth/login", params, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    })
+  // These are kept for backward compatibility but will use Cognito
+  login: async (credentials: { email: string; password: string }) => {
+    const tokens = await cognitoAuthService.login(credentials.email, credentials.password)
+    return { data: { access_token: tokens.accessToken, token_type: "bearer" } }
   },
-  register: (userData: { email: string; password: string; full_name: string }) =>
-    api.post<User>("/auth/register", userData),
-  getCurrentUser: () => api.get<User>("/users/me"),
+
+  register: async (userData: { email: string; password: string; full_name: string }) => {
+    const result = await cognitoAuthService.register(userData.email, userData.password, userData.full_name)
+    return { data: { userSub: result.userSub, needsConfirmation: result.needsConfirmation } }
+  },
+
+  getCurrentUser: async () => {
+    const user = await cognitoAuthService.getCurrentUser()
+    return { data: user }
+  },
 }
 
 export default api

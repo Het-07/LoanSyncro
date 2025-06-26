@@ -1,10 +1,13 @@
+"use client";
+
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import RegisterForm from "../components/auth/RegisterForm";
+import ConfirmSignUpForm from "../components/auth/ConfirmSignUpForm";
 
 export default function RegisterPage() {
-  const { register, loading, error, user } = useAuth();
+  const { register, loading, error, user, needsConfirmation } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,6 +24,11 @@ export default function RegisterPage() {
   ) => {
     await register(email, password, fullName);
   };
+
+  // Show confirmation form if registration was successful but needs email verification
+  if (needsConfirmation) {
+    return <ConfirmSignUpForm />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col relative overflow-hidden">

@@ -1,16 +1,23 @@
+"use client";
+
 import { createContext, useState, useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { authService } from "../services/api";
-import type { User, AuthContextType } from "../types/auth";
+import { cognitoAuthService, type CognitoUser } from "../services/congnitoAuth";
+import type { AuthContextType } from "../types/auth";
 
 // Create context with default values
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   error: null,
+  needsConfirmation: false,
+  pendingEmail: null,
   login: async () => {},
   register: async () => {},
+  confirmSignUp: async () => {},
+  resendConfirmationCode: async () => {},
   logout: () => {},
+  clearError: () => {},
 });
 
 interface AuthProviderProps {
@@ -18,28 +25,33 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<CognitoUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetchUserData();
-    } else {
-      setLoading(false);
-    }
+    checkAuthState();
   }, []);
 
-  const fetchUserData = async () => {
+  const checkAuthState = async () => {
     try {
-      const response = await authService.getCurrentUser();
-      setUser(response.data);
-    } catch (error) {
-      console.error("Failed to fetch user data:", error);
-      localStorage.removeItem("token");
+      setLoading(true);
+      console.log("🔍 Checking auth state...");
+
+      if (cognitoAuthService.isAuthenticated()) {
+        const currentUser = await cognitoAuthService.getCurrentUser();
+        setUser(currentUser);
+        console.log("✅ User is authenticated:", currentUser.email);
+      } else {
+        console.log("❌ User is not authenticated");
+      }
+    } catch (error: any) {
+      console.error("❌ Auth check failed:", error);
+      // Clear any invalid tokens
+      await cognitoAuthService.logout();
     } finally {
       setLoading(false);
     }
@@ -49,16 +61,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       setError(null);
+      console.log("🔐 Attempting login for:", email);
 
-      const response = await authService.login({ email, password });
+      await cognitoAuthService.login(email, password);
+      const currentUser = await cognitoAuthService.getCurrentUser();
 
-      const { access_token } = response.data;
-      localStorage.setItem("token", access_token);
-
-      await fetchUserData();
+      setUser(currentUser);
+      console.log("✅ Login successful, redirecting to dashboard");
       navigate("/dashboard");
     } catch (error: any) {
-      setError(error.response?.data?.detail || "Failed to login");
+      console.error("❌ Login failed:", error.message);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -72,34 +85,95 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       setError(null);
+      console.log("📝 Attempting registration for:", email);
 
-      await authService.register({
+      const result = await cognitoAuthService.register(
         email,
         password,
-        full_name: fullName,
-      });
+        fullName
+      );
 
-      await login(email, password);
+      if (result.needsConfirmation) {
+        console.log("📧 Registration successful, needs email confirmation");
+        setNeedsConfirmation(true);
+        setPendingEmail(email);
+      } else {
+        console.log("✅ Registration successful, auto-confirmed");
+        // Auto-login if no confirmation needed
+        await login(email, password);
+      }
     } catch (error: any) {
-      setError(error.response?.data?.detail || "Failed to register");
+      console.error("❌ Registration failed:", error.message);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmSignUp = async (email: string, code: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("📧 Confirming signup for:", email);
+
+      await cognitoAuthService.confirmSignUp(email, code);
+
+      // Clear confirmation state
+      setNeedsConfirmation(false);
+      setPendingEmail(null);
+
+      console.log("✅ Email confirmed, redirecting to login");
+      navigate("/login");
+    } catch (error: any) {
+      console.error("❌ Confirmation failed:", error.message);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendConfirmationCode = async (email: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("📨 Resending confirmation code to:", email);
+
+      await cognitoAuthService.resendConfirmationCode(email);
+      console.log("✅ Confirmation code resent");
+    } catch (error: any) {
+      console.error("❌ Resend failed:", error.message);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    console.log("🚪 Logging out...");
+    cognitoAuthService.logout();
     setUser(null);
+    setNeedsConfirmation(false);
+    setPendingEmail(null);
+    setError(null);
     navigate("/login");
+  };
+
+  const clearError = () => {
+    setError(null);
   };
 
   const value = {
     user,
     loading,
     error,
+    needsConfirmation,
+    pendingEmail,
     login,
     register,
+    confirmSignUp,
+    resendConfirmationCode,
     logout,
+    clearError,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
