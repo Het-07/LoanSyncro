@@ -143,11 +143,14 @@ export default function RepaymentsPage() {
   };
 
   // Filter repayments based on search term
-  const filteredRepayments = repayments.filter((repayment) =>
-    loans[repayment.loan_id]?.title
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
+  const filteredRepayments =
+    repayments.length > 0
+      ? repayments.filter((repayment) =>
+          loans[repayment.loan_id]?.title
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
+        )
+      : [];
 
   // Group repayments by loan
   const groupedRepayments = filteredRepayments.reduce((acc, repayment) => {

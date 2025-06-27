@@ -11,6 +11,7 @@ export default function LoansPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  console.log(loans, typeof loans, "loans data");
 
   // Format currency
   const formatCurrency = (value: number): string => {
@@ -30,9 +31,12 @@ export default function LoansPage() {
   };
 
   // Filter loans based on search term
-  const filteredLoans = loans.filter((loan) =>
-    loan.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredLoans =
+    loans.length > 0
+      ? loans.filter((loan) =>
+          loan.title.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : [];
 
   if (loading) {
     return (
