@@ -75,13 +75,6 @@ export default function DashboardPage() {
             Here's an overview of your loan portfolio
           </p>
         </div>
-
-        {/* <div className="flex justify-center items-center h-96">
-          <div className="relative">
-            <div className="w-16 h-16 border-4 border-gray-700 border-t-red-500 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-red-400 rounded-full animate-spin animate-pulse-slow"></div>
-          </div>
-        </div> */}
       </div>
     );
   }
@@ -175,7 +168,7 @@ export default function DashboardPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {summaryCards.map((card, index) => (
+        {summaryCards.map((card) => (
           <div
             key={card.title}
             className="card-dark p-6 hover-glow animate-slide-up"
