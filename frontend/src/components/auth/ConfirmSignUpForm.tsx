@@ -1,3 +1,5 @@
+"use client";
+
 import type React from "react";
 import { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
@@ -96,7 +98,7 @@ export default function ConfirmSignUpForm() {
                     maxLength={6}
                     autoComplete="one-time-code"
                   />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                     <i className="fas fa-shield-alt text-gray-400"></i>
                   </div>
                 </div>

@@ -1,8 +1,9 @@
 export interface User {
-  id: string
+  id: string 
   email: string
   full_name: string
-  created_at: string
+  created_at: string 
+  email_verified: boolean 
 }
 
 export interface AuthState {
@@ -22,6 +23,13 @@ export interface RegisterData {
   full_name: string
 }
 
+export interface AuthTokens {
+  accessToken: string
+  idToken?: string 
+  refreshToken?: string 
+  expiresIn: number
+}
+
 export interface AuthContextType {
   user: User | null
   loading: boolean
@@ -34,6 +42,6 @@ export interface AuthContextType {
   register: (email: string, password: string, fullName: string) => Promise<void>
   confirmSignUp: (email: string, code: string) => Promise<void>
   resendConfirmationCode: (email: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   clearError: () => void
 }

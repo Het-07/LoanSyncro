@@ -1,21 +1,12 @@
+"use client";
+
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useAuth } from "../../hooks/useAuth";
 
-interface RegisterFormProps {
-  onSubmit: (
-    email: string,
-    password: string,
-    fullName: string
-  ) => Promise<void>;
-  loading: boolean;
-  error?: string | null;
-}
+export default function RegisterForm() {
+  const { register, loading, error } = useAuth();
 
-export default function RegisterForm({
-  onSubmit,
-  loading,
-  error,
-}: RegisterFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -82,8 +73,8 @@ export default function RegisterForm({
       return;
     }
 
-    // Call the onSubmit function with trimmed values
-    await onSubmit(email.trim(), password, fullName.trim());
+    // Call the register function from AuthContext
+    await register(email.trim(), password, fullName.trim());
   };
 
   return (

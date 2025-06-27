@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance } from "axios"
-import { cognitoAuthService } from "./congnitoAuth"
+import { cognitoAuthService } from "./congnitoAuth" 
 import type { Loan, LoanFormData } from "../types/loan"
 import type { Repayment, Summary } from "../types/repayment"
 
@@ -11,13 +11,14 @@ console.log("🌐 API_URL:", API_URL)
 // Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
-  timeout: 10000, // 10 second timeout
+  timeout: 10000,
 })
 
 // Request interceptor for adding Cognito access token
 api.interceptors.request.use(
-  (config) => {
-    const accessToken = cognitoAuthService.getAccessToken()
+  async (config) => {
+    // Make this async to await the token
+    const accessToken = await cognitoAuthService.getAccessToken() 
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`
     }
@@ -34,13 +35,14 @@ api.interceptors.response.use(
     console.log(`✅ Response from ${response.config.url}:`, response.status)
     return response
   },
-  (error) => {
+  async (error) => {
+    // Make this async to await logout
     console.error("❌ API Error:", error.response?.status, error.response?.data)
 
     if (error.response && error.response.status === 401) {
       // Unauthorized - clear tokens and redirect to login
       console.log("🚪 Unauthorized - redirecting to login")
-      cognitoAuthService.logout()
+      await cognitoAuthService.logout() 
       window.location.href = "/login"
     }
     return Promise.reject(error)
@@ -61,25 +63,6 @@ export const repaymentService = {
   create: (data: Partial<Repayment>) => api.post<Repayment>("/repayments", data),
   getForLoan: (loanId: string) => api.get<Repayment[]>(`/repayments/loan/${loanId}`),
   getSummary: () => api.get<Summary>("/repayments/summary"),
-}
-
-// Note: Auth service now uses Cognito directly, not API calls
-export const authService = {
-  // These are kept for backward compatibility but will use Cognito
-  login: async (credentials: { email: string; password: string }) => {
-    const tokens = await cognitoAuthService.login(credentials.email, credentials.password)
-    return { data: { access_token: tokens.accessToken, token_type: "bearer" } }
-  },
-
-  register: async (userData: { email: string; password: string; full_name: string }) => {
-    const result = await cognitoAuthService.register(userData.email, userData.password, userData.full_name)
-    return { data: { userSub: result.userSub, needsConfirmation: result.needsConfirmation } }
-  },
-
-  getCurrentUser: async () => {
-    const user = await cognitoAuthService.getCurrentUser()
-    return { data: user }
-  },
 }
 
 export default api

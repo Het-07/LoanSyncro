@@ -1,45 +1,15 @@
 import {
-  CognitoIdentityProviderClient,
-  InitiateAuthCommand,
-  SignUpCommand,
-  ConfirmSignUpCommand,
-  ResendConfirmationCodeCommand,
-  GetUserCommand,
-  GlobalSignOutCommand,
-  type AuthenticationResultType,
-  type AttributeType,
-} from "@aws-sdk/client-cognito-identity-provider"
-
-const region = import.meta.env.VITE_AWS_REGION || "us-east-1"
-const userPoolId = import.meta.env.VITE_COGNITO_USER_POOL_ID
-const userPoolClientId = import.meta.env.VITE_COGNITO_USER_POOL_CLIENT_ID
-
-// Validate required environment variables
-if (!userPoolId) {
-  console.log(
-    "Available env vars:",
-    Object.keys(import.meta.env).filter((key) => key.startsWith("VITE_")),
-  )
-  throw new Error("VITE_COGNITO_USER_POOL_ID is required")
-}
-
-if (!userPoolClientId) {
-  console.log(
-    "Available env vars:",
-    Object.keys(import.meta.env).filter((key) => key.startsWith("VITE_")),
-  )
-  throw new Error("VITE_COGNITO_USER_POOL_CLIENT_ID is required")
-}
-
-console.log("Cognito Config:", {
-  region,
-  userPoolId,
-  env: import.meta.env.MODE,
-})
-
-const cognitoClient = new CognitoIdentityProviderClient({
-  region: region,
-})
+  signIn,
+  signUp,
+  confirmSignUp,
+  resendSignUpCode,
+  fetchUserAttributes,
+  signOut,
+  fetchAuthSession,
+  getCurrentUser,
+  type AuthUser,
+} from "@aws-amplify/auth"
+import type { AuthTokens } from "../types/auth"
 
 export interface CognitoUser {
   id: string
@@ -49,293 +19,186 @@ export interface CognitoUser {
   created_at: string
 }
 
-export interface AuthTokens {
-  accessToken: string
-  idToken: string
-  refreshToken: string
-  expiresIn: number
-}
-
 class CognitoAuthService {
-  // Register new user
   async register(
     email: string,
     password: string,
     fullName: string,
   ): Promise<{ userSub: string; needsConfirmation: boolean }> {
     try {
-      console.log("Registering user:", email)
-
-      // Validate inputs
-      if (!email?.trim()) {
-        throw new Error("Email is required")
-      }
-      if (!password?.trim()) {
-        throw new Error("Password is required")
-      }
-      if (!fullName?.trim()) {
-        throw new Error("Full name is required")
+      if (!email?.trim() || !password?.trim() || !fullName?.trim()) {
+        throw new Error("All fields are required for registration.")
       }
 
-      const command = new SignUpCommand({
-        ClientId: userPoolClientId,
-        Username: email.trim(),
-        Password: password,
-        UserAttributes: [
-          {
-            Name: "email",
-            Value: email.trim(),
+      const { userId, nextStep } = await signUp({
+        username: email.trim(),
+        password: password,
+        options: {
+          userAttributes: {
+            email: email.trim(),
+            name: fullName.trim(),
           },
-          {
-            Name: "name",
-            Value: fullName.trim(),
-          },
-        ],
-      })
-
-      const response = await cognitoClient.send(command)
-      console.log("Registration successful:", response.UserSub)
-      console.log("Confirmation needed:", !response.UserConfirmed)
-
-      return {
-        userSub: response.UserSub!,
-        needsConfirmation: !response.UserConfirmed,
-      }
-    } catch (error: any) {
-      console.error("Registration error:", error)
-      throw new Error(this.getErrorMessage(error))
-    }
-  }
-
-  // Confirm user registration with verification code
-  async confirmSignUp(email: string, confirmationCode: string): Promise<void> {
-    try {
-      console.log("Confirming signup for:", email)
-
-      if (!email?.trim()) {
-        throw new Error("Email is required")
-      }
-      if (!confirmationCode?.trim()) {
-        throw new Error("Confirmation code is required")
-      }
-
-      const command = new ConfirmSignUpCommand({
-        ClientId: userPoolClientId,
-        Username: email.trim(),
-        ConfirmationCode: confirmationCode.trim(),
-      })
-
-      await cognitoClient.send(command)
-      console.log("Email confirmation successful")
-    } catch (error: any) {
-      console.error("Confirmation error:", error)
-      throw new Error(this.getErrorMessage(error))
-    }
-  }
-
-  // Resend confirmation code
-  async resendConfirmationCode(email: string): Promise<void> {
-    try {
-      console.log("Resending confirmation code to:", email)
-
-      if (!email?.trim()) {
-        throw new Error("Email is required")
-      }
-
-      const command = new ResendConfirmationCodeCommand({
-        ClientId: userPoolClientId,
-        Username: email.trim(),
-      })
-
-      await cognitoClient.send(command)
-      console.log("Confirmation code resent")
-    } catch (error: any) {
-      console.error("Resend confirmation error:", error)
-      throw new Error(this.getErrorMessage(error))
-    }
-  }
-
-  // Login user
-  async login(email: string, password: string): Promise<AuthTokens> {
-    try {
-      console.log("🔐 Logging in user:", email)
-
-      if (!email?.trim()) {
-        throw new Error("Email is required")
-      }
-      if (!password?.trim()) {
-        throw new Error("Password is required")
-      }
-
-      const command = new InitiateAuthCommand({
-        ClientId: userPoolClientId,
-        AuthFlow: "USER_PASSWORD_AUTH",
-        AuthParameters: {
-          USERNAME: email.trim(),
-          PASSWORD: password,
         },
       })
 
-      const response = await cognitoClient.send(command)
+      return {
+        userSub: userId!,
+        needsConfirmation: nextStep.signUpStep === "CONFIRM_SIGN_UP",
+      }
+    } catch (error: any) {
+      throw new Error(this.getErrorMessage(error))
+    }
+  }
 
-      if (response.ChallengeName) {
-        throw new Error(`Authentication challenge required: ${response.ChallengeName}`)
+  async confirmSignUp(email: string, confirmationCode: string): Promise<void> {
+    try {
+      if (!email?.trim() || !confirmationCode?.trim()) {
+        throw new Error("Email and confirmation code are required.")
       }
 
-      if (!response.AuthenticationResult) {
-        throw new Error("Authentication failed - no tokens received")
+      const { isSignUpComplete, nextStep } = await confirmSignUp({
+        username: email.trim(),
+        confirmationCode: confirmationCode.trim(),
+      })
+
+      if (!isSignUpComplete) {
+        throw new Error(`Confirmation not complete. Next step: ${nextStep.signUpStep}`)
+      }
+    } catch (error: any) {
+      throw new Error(this.getErrorMessage(error))
+    }
+  }
+
+  async resendConfirmationCode(email: string): Promise<void> {
+    try {
+      if (!email?.trim()) {
+        throw new Error("Email is required.")
       }
 
-      const authResult: AuthenticationResultType = response.AuthenticationResult
+      await resendSignUpCode({ username: email.trim() })
+    } catch (error: any) {
+      throw new Error(this.getErrorMessage(error))
+    }
+  }
+
+  async login(email: string, password: string): Promise<AuthTokens> {
+    try {
+      if (!email?.trim() || !password?.trim()) {
+        throw new Error("Email and password are required.")
+      }
+
+      const { isSignedIn, nextStep } = await signIn({ username: email.trim(), password: password })
+
+      if (!isSignedIn) {
+        throw new Error(`Sign in not complete. Next step: ${nextStep.signInStep}`)
+      }
+
+      const session = await fetchAuthSession()
+      if (!session.tokens) {
+        throw new Error("Authentication failed: No tokens received.")
+      }
+
       const tokens: AuthTokens = {
-        accessToken: authResult.AccessToken!,
-        idToken: authResult.IdToken!,
-        refreshToken: authResult.RefreshToken!,
-        expiresIn: authResult.ExpiresIn || 3600,
+        accessToken: session.tokens.accessToken.toString(),
+        idToken: session.tokens.idToken?.toString(),
+        expiresIn: session.tokens.accessToken.payload?.exp || 7200, // Use payload expiration or default to 0
+        // refreshToken: session.tokens.refreshToken?.toString(), 
+        // expiresIn: session.tokens.accessToken.expiresIn,
       }
-
-      // Store tokens in localStorage
-      this.storeTokens(tokens)
-      console.log("Login successful")
 
       return tokens
     } catch (error: any) {
-      console.error("Login error:", error)
       throw new Error(this.getErrorMessage(error))
     }
   }
 
-  // Get current user
   async getCurrentUser(): Promise<CognitoUser> {
     try {
-      const accessToken = this.getAccessToken()
-      if (!accessToken) {
-        throw new Error("No access token found")
+      const userAttributes = await fetchUserAttributes()
+      const amplifyUser: AuthUser = await getCurrentUser()
+
+      if (!userAttributes || !amplifyUser) {
+        throw new Error("No current user found or attributes missing.")
       }
-
-      console.log("Getting current user")
-
-      const command = new GetUserCommand({
-        AccessToken: accessToken,
-      })
-
-      const response = await cognitoClient.send(command)
-
-      const email = response.UserAttributes?.find((attr: AttributeType) => attr.Name === "email")?.Value || ""
-      const name = response.UserAttributes?.find((attr: AttributeType) => attr.Name === "name")?.Value || ""
-      const emailVerified =
-        response.UserAttributes?.find((attr: AttributeType) => attr.Name === "email_verified")?.Value === "true"
 
       const user: CognitoUser = {
-        id: response.Username!,
-        email: email,
-        full_name: name,
-        email_verified: emailVerified,
-        created_at: new Date().toISOString(), 
+        id: amplifyUser.userId,
+        email: userAttributes.email || "",
+        full_name: userAttributes.name || "",
+        email_verified: userAttributes.email_verified === "true",
+        created_at: new Date().toISOString(),
       }
 
-      console.log("User retrieved:", user.email)
       return user
     } catch (error: any) {
-      console.error("Get user error:", error)
-      this.clearTokens() // Clear invalid tokens
+      await this.logout()
       throw new Error(this.getErrorMessage(error))
     }
   }
 
-  // Global logout (signs out from all devices)
   async logout(): Promise<void> {
     try {
-      const accessToken = this.getAccessToken()
-      if (accessToken) {
-        console.log("Signing out globally")
+      await signOut()
+    } catch (error: any) {
+      throw new Error(this.getErrorMessage(error))
+    }
+  }
 
-        const command = new GlobalSignOutCommand({
-          AccessToken: accessToken,
-        })
-
-        await cognitoClient.send(command)
-      }
+  async isAuthenticated(): Promise<boolean> {
+    try {
+      const { tokens } = await fetchAuthSession()
+      return !!tokens?.accessToken // Check for the presence of an access token
     } catch (error) {
-      console.error("Logout error:", error)
-      // Continue with local logout even if global logout fails
-    } finally {
-      this.clearTokens()
-      console.log("Logout complete")
-    }
-  }
-
-  // Token management
-  private storeTokens(tokens: AuthTokens): void {
-    localStorage.setItem("cognito_access_token", tokens.accessToken)
-    localStorage.setItem("cognito_id_token", tokens.idToken)
-    localStorage.setItem("cognito_refresh_token", tokens.refreshToken)
-    localStorage.setItem("cognito_expires_at", (Date.now() + tokens.expiresIn * 1000).toString())
-  }
-
-  private clearTokens(): void {
-    localStorage.removeItem("cognito_access_token")
-    localStorage.removeItem("cognito_id_token")
-    localStorage.removeItem("cognito_refresh_token")
-    localStorage.removeItem("cognito_expires_at")
-  }
-
-  // Check if user is authenticated
-  isAuthenticated(): boolean {
-    const accessToken = this.getAccessToken()
-    const expiresAt = localStorage.getItem("cognito_expires_at")
-
-    if (!accessToken || !expiresAt) {
       return false
     }
+  }
 
-    // Check if token is expired
-    if (Date.now() > Number.parseInt(expiresAt)) {
-      this.clearTokens()
-      return false
+  async getAccessToken(): Promise<string | null> {
+    try {
+      const session = await fetchAuthSession()
+      return session.tokens?.accessToken?.toString() || null
+    } catch (error) {
+      return null
     }
-
-    return true
   }
 
-  // Get access token for API calls
-  getAccessToken(): string | null {
-    return localStorage.getItem("cognito_access_token")
-  }
-
-  // Get ID token (contains user info)
-  getIdToken(): string | null {
-    return localStorage.getItem("cognito_id_token")
-  }
-
-  // Helper to get user-friendly error messages
   private getErrorMessage(error: any): string {
-    const errorCode = error.name || error.__type || "UnknownError"
+    const errorMessage = error.message || "An unexpected error occurred"
 
-    switch (errorCode) {
-      case "UserNotFoundException":
-        return "No account found with this email address"
-      case "NotAuthorizedException":
-        return "Incorrect email or password"
-      case "UserNotConfirmedException":
-        return "Please verify your email address before signing in"
-      case "CodeMismatchException":
-        return "Invalid verification code"
-      case "ExpiredCodeException":
-        return "Verification code has expired"
-      case "LimitExceededException":
-        return "Too many attempts. Please try again later"
-      case "UsernameExistsException":
-        return "An account with this email already exists"
-      case "InvalidPasswordException":
-        return "Password does not meet requirements"
-      case "InvalidParameterException":
-        return "Invalid input provided"
-      case "TooManyRequestsException":
-        return "Too many requests. Please try again later"
-      default:
-        return error.message || "An unexpected error occurred"
+    if (errorMessage.includes("UserNotFoundException")) {
+      return "No account found with this email address."
     }
+    if (errorMessage.includes("NotAuthorizedException")) {
+      return "Incorrect email or password."
+    }
+    if (errorMessage.includes("UserNotConfirmedException")) {
+      return "Please verify your email address before signing in."
+    }
+    if (errorMessage.includes("CodeMismatchException")) {
+      return "Invalid verification code."
+    }
+    if (errorMessage.includes("ExpiredCodeException")) {
+      return "Verification code has expired."
+    }
+    if (errorMessage.includes("LimitExceededException")) {
+      return "Too many attempts. Please try again later."
+    }
+    if (errorMessage.includes("UsernameExistsException")) {
+      return "An account with this email already exists."
+    }
+    if (errorMessage.includes("InvalidPasswordException")) {
+      return "Password does not meet requirements."
+    }
+    if (errorMessage.includes("InvalidParameterException")) {
+      return "Invalid input provided."
+    }
+    if (errorMessage.includes("TooManyRequestsException")) {
+      return "Too many requests. Please try again later."
+    }
+    if (errorMessage.includes("Network Error")) {
+      return "Network error. Please check your internet connection."
+    }
+    return errorMessage
   }
 }
 

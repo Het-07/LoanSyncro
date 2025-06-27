@@ -28,6 +28,14 @@ resource "aws_cognito_user_pool" "main" {
     mutable             = true
   }
 
+  # Add custom:isInitialized attribute
+  schema {
+    attribute_data_type = "String"
+    name                = "custom:isInitialized"
+    required            = false # Not required at signup, set later
+    mutable             = true
+  }
+
   # Account recovery
   account_recovery_setting {
     recovery_mechanism {

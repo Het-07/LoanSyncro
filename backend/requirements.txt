@@ -1,8 +1,9 @@
 fastapi
 uvicorn
 pydantic
-python-jose
+python-jose[cryptography] 
 python-multipart
 pyjwt
 email-validator
 boto3
+requests 

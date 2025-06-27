@@ -7,25 +7,15 @@ import RegisterForm from "../components/auth/RegisterForm";
 import ConfirmSignUpForm from "../components/auth/ConfirmSignUpForm";
 
 export default function RegisterPage() {
-  const { register, loading, error, user, needsConfirmation } = useAuth();
+  const { user, needsConfirmation } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // If user is already logged in, redirect to dashboard
     if (user) {
       navigate("/dashboard");
     }
   }, [user, navigate]);
 
-  const handleRegister = async (
-    email: string,
-    password: string,
-    fullName: string
-  ) => {
-    await register(email, password, fullName);
-  };
-
-  // Show confirmation form if registration was successful but needs email verification
   if (needsConfirmation) {
     return <ConfirmSignUpForm />;
   }
@@ -83,11 +73,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="mt-8 bg-gray-800/70 backdrop-blur-sm rounded-lg shadow-2xl py-8 px-6 ring-1 ring-gray-700 transform transition-all duration-500 hover:shadow-accent-500/10">
-            <RegisterForm
-              onSubmit={handleRegister}
-              loading={loading}
-              error={error}
-            />
+            <RegisterForm /> {/* Error and loading are passed via context */}
           </div>
         </div>
       </main>

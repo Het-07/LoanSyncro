@@ -16,7 +16,7 @@ export const AuthContext = createContext<AuthContextType>({
   register: async () => {},
   confirmSignUp: async () => {},
   resendConfirmationCode: async () => {},
-  logout: () => {},
+  logout: async () => {},
   clearError: () => {},
 });
 
@@ -39,19 +39,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const checkAuthState = async () => {
     try {
       setLoading(true);
-      console.log("🔍 Checking auth state...");
+      console.log("🔍 Checking auth state with Amplify...");
 
-      if (cognitoAuthService.isAuthenticated()) {
+      const isAuthenticated = await cognitoAuthService.isAuthenticated();
+
+      if (isAuthenticated) {
         const currentUser = await cognitoAuthService.getCurrentUser();
         setUser(currentUser);
         console.log("✅ User is authenticated:", currentUser.email);
       } else {
+        setUser(null); // Ensure user is null if not authenticated
         console.log("❌ User is not authenticated");
       }
     } catch (error: any) {
       console.error("❌ Auth check failed:", error);
-      // Clear any invalid tokens
-      await cognitoAuthService.logout();
+      setUser(null); // Ensure user is null on error
+      // The cognitoAuthService.getCurrentUser() now handles internal logout on error
     } finally {
       setLoading(false);
     }
@@ -97,9 +100,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log("📧 Registration successful, needs email confirmation");
         setNeedsConfirmation(true);
         setPendingEmail(email);
+        // Navigate to login page, where ConfirmSignUpForm will be rendered
+        navigate("/register"); // Navigate to register page to show confirmation form
       } else {
         console.log("✅ Registration successful, auto-confirmed");
-        // Auto-login if no confirmation needed
+        // Auto-login if no confirmation needed (rare for email/password flow)
         await login(email, password);
       }
     } catch (error: any) {
@@ -148,9 +153,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     console.log("🚪 Logging out...");
-    cognitoAuthService.logout();
+    await cognitoAuthService.logout();
     setUser(null);
     setNeedsConfirmation(false);
     setPendingEmail(null);
