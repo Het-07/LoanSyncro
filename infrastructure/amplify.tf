@@ -1,6 +1,7 @@
 # Data source to retrieve GitHub token from SSM Parameter Store
 data "aws_ssm_parameter" "github_token" {
-  name = "/loansyncro/github-token"
+  name            = "/loansyncro/github-token" 
+  with_decryption = true 
 }
 
 # Amplify App
@@ -38,7 +39,6 @@ resource "aws_amplify_app" "main" {
     VITE_AWS_REGION                  = var.aws_region
     VITE_COGNITO_USER_POOL_ID        = aws_cognito_user_pool.main.id
     VITE_COGNITO_USER_POOL_CLIENT_ID = aws_cognito_user_pool_client.main.id # Standardized name
-    VITE_COGNITO_IDENTITY_POOL_ID    = aws_cognito_identity_pool.main.id
     VITE_S3_BUCKET                   = aws_s3_bucket.storage.bucket
     VITE_ENVIRONMENT                 = var.environment
   }

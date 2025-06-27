@@ -74,3 +74,18 @@ temp/
 TODO
 NOTES.md
 PRIVATE.md
+PAT.txt
+
+# Terraform
+.terraform/
+*.tfplan
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+terraform.tfvars
+terraform.tfvars.json
+*.tfvars
+*.tfvars.json

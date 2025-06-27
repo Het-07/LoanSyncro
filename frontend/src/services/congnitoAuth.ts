@@ -40,7 +40,7 @@ class CognitoAuthService {
           },
         },
       })
-
+      console.log("Sign up response:", { userId, nextStep })
       return {
         userSub: userId!,
         needsConfirmation: nextStep.signUpStep === "CONFIRM_SIGN_UP",

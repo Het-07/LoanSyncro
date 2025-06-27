@@ -8,7 +8,7 @@ variable "environment" {
   description = "Environment name (dev, staging, prod)"
   type        = string
   default     = "dev"
-  
+
   validation {
     condition     = contains(["dev", "staging", "prod"], var.environment)
     error_message = "Environment must be dev, staging, or prod."
@@ -24,7 +24,7 @@ variable "project_name" {
 # Local values for consistent naming
 locals {
   name_prefix = "${var.project_name}-${var.environment}"
-  
+
   common_tags = {
     Project     = "LoanSyncro"
     Environment = var.environment
@@ -32,10 +32,11 @@ locals {
   }
 }
 
+# GitHub repository URL is still a variable
 variable "github_repository_url" {
   description = "GitHub repository URL for Amplify"
   type        = string
-  default     = "https://github.com/yourusername/loansyncro"
+  # No default here, it will be provided via terraform.tfvars
 }
 
 variable "github_branch" {

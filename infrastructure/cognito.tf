@@ -13,26 +13,18 @@ resource "aws_cognito_user_pool" "main" {
 
   # User attributes
   username_attributes = ["email"]
-  
-  schema {
-    attribute_data_type = "String"
-    name                = "email"
-    required            = true
-    mutable             = true
+  auto_verified_attributes = ["email"]
+
+  verification_message_template {
+    default_email_option = "CONFIRM_WITH_CODE"
+    email_message        = "Your verification code is {####}. Please use this code to confirm your LoanSyncro account."
+    email_subject        = "Your LoanSyncro Verification Code"
   }
 
-  schema {
-    attribute_data_type = "String"
-    name                = "name"
-    required            = true
-    mutable             = true
-  }
-
-  # Add custom:isInitialized attribute
   schema {
     attribute_data_type = "String"
     name                = "custom:isInitialized"
-    required            = false # Not required at signup, set later
+    required            = false 
     mutable             = true
   }
 
@@ -93,19 +85,3 @@ resource "aws_cognito_user_pool_client" "main" {
   ]
 }
 
-# Cognito Identity Pool
-resource "aws_cognito_identity_pool" "main" {
-  identity_pool_name               = "${local.name_prefix}-identity"
-  allow_unauthenticated_identities = false
-
-  cognito_identity_providers {
-    client_id               = aws_cognito_user_pool_client.main.id
-    provider_name           = aws_cognito_user_pool.main.endpoint
-    server_side_token_check = false
-  }
-
-  tags = merge(local.common_tags, {
-    Name    = "${local.name_prefix}-identity-pool"
-    Service = "Authentication"
-  })
-}

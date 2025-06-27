@@ -36,7 +36,6 @@ resource "aws_lambda_function" "auth_handler" {
       # Cognito
       COGNITO_USER_POOL_ID        = aws_cognito_user_pool.main.id
       COGNITO_USER_POOL_CLIENT_ID = aws_cognito_user_pool_client.main.id
-      COGNITO_IDENTITY_POOL_ID    = aws_cognito_identity_pool.main.id
       
       # Security
       KMS_KEY_ID = aws_kms_key.main.key_id
@@ -84,7 +83,6 @@ resource "aws_lambda_function" "loans_handler" {
       # Cognito
       COGNITO_USER_POOL_ID        = aws_cognito_user_pool.main.id
       COGNITO_USER_POOL_CLIENT_ID = aws_cognito_user_pool_client.main.id
-      COGNITO_IDENTITY_POOL_ID    = aws_cognito_identity_pool.main.id
       
       # Security
       KMS_KEY_ID = aws_kms_key.main.key_id
@@ -130,7 +128,6 @@ resource "aws_lambda_function" "repayments_handler" {
       # Cognito
       COGNITO_USER_POOL_ID        = aws_cognito_user_pool.main.id
       COGNITO_USER_POOL_CLIENT_ID = aws_cognito_user_pool_client.main.id
-      COGNITO_IDENTITY_POOL_ID    = aws_cognito_identity_pool.main.id
       
       # Security
       KMS_KEY_ID = aws_kms_key.main.key_id
