@@ -12,7 +12,7 @@ resource "aws_cognito_user_pool" "main" {
   }
 
   # User attributes
-  username_attributes = ["email"]
+  username_attributes      = ["email"]
   auto_verified_attributes = ["email"]
 
   verification_message_template {
@@ -24,7 +24,7 @@ resource "aws_cognito_user_pool" "main" {
   schema {
     attribute_data_type = "String"
     name                = "custom:isInitialized"
-    required            = false 
+    required            = false
     mutable             = true
   }
 
@@ -39,6 +39,14 @@ resource "aws_cognito_user_pool" "main" {
   # Email configuration
   email_configuration {
     email_sending_account = "COGNITO_DEFAULT"
+  }
+
+  # Add custom attributes for user_id if needed
+  schema {
+    attribute_data_type = "String"
+    name                = "custom:user_id"
+    required            = false
+    mutable             = true
   }
 
   tags = merge(local.common_tags, {
@@ -71,17 +79,31 @@ resource "aws_cognito_user_pool_client" "main" {
     refresh_token = "days"
   }
 
-  # CORS settings
-  supported_identity_providers = ["COGNITO"]
+  # Enable OAuth flows for API Gateway authorizer
+  allowed_oauth_flows                  = ["code", "implicit"]
+  allowed_oauth_scopes                 = ["phone", "email", "openid", "profile", "aws.cognito.signin.user.admin"]
+  supported_identity_providers         = ["COGNITO"]
   
+  # Update callback and logout URLs to match Amplify domain
   callback_urls = [
-    "http://localhost:3000",
-    "https://${local.name_prefix}.amplifyapp.com"
+    "http://localhost:3000/",
+    "https://${local.name_prefix}.amplifyapp.com/",
+    "https://${var.custom_domain}/" # Include custom domain if set
   ]
   
   logout_urls = [
-    "http://localhost:3000",
-    "https://${local.name_prefix}.amplifyapp.com"
+    "http://localhost:3000/",
+    "https://${local.name_prefix}.amplifyapp.com/",
+    "https://${var.custom_domain}/" # Include custom domain if set
   ]
+
+  # Ensure tokens include custom attributes
+  read_attributes = ["email", "name", "custom:user_id"]
+  write_attributes = ["email", "name", "custom:user_id"]
 }
 
+# Cognito User Pool Domain (optional, for Hosted UI)
+resource "aws_cognito_user_pool_domain" "main" {
+  domain       = "${local.name_prefix}-domain"
+  user_pool_id = aws_cognito_user_pool.main.id
+}
