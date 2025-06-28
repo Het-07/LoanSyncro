@@ -120,7 +120,7 @@ resource "aws_api_gateway_method" "loans_any" {
   rest_api_id   = aws_api_gateway_rest_api.main.id
   resource_id   = aws_api_gateway_resource.loans.id
   http_method   = "ANY"
-  authorization = "COGNITO"
+  authorization = "COGNITO_USER_POOLS"
   authorizer_id = aws_api_gateway_authorizer.cognito.id
 }
 
@@ -134,7 +134,7 @@ resource "aws_api_gateway_method" "loans_proxy_any" {
   rest_api_id   = aws_api_gateway_rest_api.main.id
   resource_id   = aws_api_gateway_resource.loans_proxy.id
   http_method   = "ANY"
-  authorization = "COGNITO"
+  authorization = "COGNITO_USER_POOLS"
   authorizer_id = aws_api_gateway_authorizer.cognito.id
 }
 
@@ -149,7 +149,7 @@ resource "aws_api_gateway_method" "repayments_any" {
   rest_api_id   = aws_api_gateway_rest_api.main.id
   resource_id   = aws_api_gateway_resource.repayments.id
   http_method   = "ANY"
-  authorization = "COGNITO"
+  authorization = "COGNITO_USER_POOLS"
   authorizer_id = aws_api_gateway_authorizer.cognito.id
 }
 
@@ -163,7 +163,7 @@ resource "aws_api_gateway_method" "repayments_proxy_any" {
   rest_api_id   = aws_api_gateway_rest_api.main.id
   resource_id   = aws_api_gateway_resource.repayments_proxy.id
   http_method   = "ANY"
-  authorization = "COGNITO"
+  authorization = "COGNITO_USER_POOLS"
   authorizer_id = aws_api_gateway_authorizer.cognito.id
 }
 

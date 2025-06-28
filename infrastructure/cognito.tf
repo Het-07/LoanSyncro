@@ -100,6 +100,8 @@ resource "aws_cognito_user_pool_client" "main" {
   # Ensure tokens include custom attributes
   read_attributes = ["email", "name", "custom:user_id"]
   write_attributes = ["email", "name", "custom:user_id"]
+
+  depends_on = [aws_cognito_user_pool.main]
 }
 
 # Cognito User Pool Domain (optional, for Hosted UI)
