@@ -2,6 +2,7 @@ import jwt
 import json
 import boto3
 import os
+import uuid
 from datetime import datetime
 from botocore.exceptions import ClientError
 
@@ -153,7 +154,6 @@ def handle_login(event, headers):
             }
         
         # Create JWT token (simplified)
-        import jwt
         import time
         
         payload = {
@@ -190,7 +190,6 @@ def handle_verify(event, headers):
         token = auth_header.split(' ')[1]
         
         # Verify JWT token
-        import jwt
         secret_key = os.environ.get('SECRET_KEY', 'temporary_secret_key_for_local_development')
         payload = jwt.decode(token, secret_key, algorithms=['HS256'])
         

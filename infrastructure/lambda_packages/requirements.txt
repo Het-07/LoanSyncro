@@ -3,4 +3,4 @@ fastapi
 pydantic
 python-jose
 email-validator
-PyJWT
+pyjwt
