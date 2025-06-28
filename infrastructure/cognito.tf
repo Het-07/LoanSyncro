@@ -21,9 +21,25 @@ resource "aws_cognito_user_pool" "main" {
     email_subject        = "Your LoanSyncro Verification Code"
   }
 
+  # Add standard attribute 'name' to the schema
+  schema {
+    attribute_data_type = "String"
+    name                = "name"  # Add this to include the 'name' attribute
+    required            = false
+    mutable             = true
+  }
+
+  # Custom attributes
   schema {
     attribute_data_type = "String"
     name                = "custom:isInitialized"
+    required            = false
+    mutable             = true
+  }
+
+  schema {
+    attribute_data_type = "String"
+    name                = "custom:user_id"
     required            = false
     mutable             = true
   }
@@ -39,14 +55,6 @@ resource "aws_cognito_user_pool" "main" {
   # Email configuration
   email_configuration {
     email_sending_account = "COGNITO_DEFAULT"
-  }
-
-  # Add custom attributes for user_id if needed
-  schema {
-    attribute_data_type = "String"
-    name                = "custom:user_id"
-    required            = false
-    mutable             = true
   }
 
   tags = merge(local.common_tags, {
@@ -98,14 +106,8 @@ resource "aws_cognito_user_pool_client" "main" {
   ]
 
   # Ensure tokens include custom attributes
-  read_attributes = ["email", "name", "custom:user_id"]
-  write_attributes = ["email", "name", "custom:user_id"]
+  # read_attributes = ["email", "name", "custom:user_id"]  
+  # write_attributes = ["email", "name", "custom:user_id"]  
 
-  depends_on = [aws_cognito_user_pool.main]
-}
-
-# Cognito User Pool Domain (optional, for Hosted UI)
-resource "aws_cognito_user_pool_domain" "main" {
-  domain       = "${local.name_prefix}-domain"
-  user_pool_id = aws_cognito_user_pool.main.id
+  depends_on = [aws_cognito_user_pool.main]  # Ensure User Pool is created first
 }
