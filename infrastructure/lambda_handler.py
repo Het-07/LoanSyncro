@@ -2,9 +2,9 @@ import jwt
 import json
 import boto3
 import os
+import hashlib
 import uuid
 from datetime import datetime
-from botocore.exceptions import ClientError
 
 def auth_handler(event, context):
     """Enhanced auth handler with proper routing"""
@@ -71,10 +71,6 @@ def handle_register(event, headers):
                 }
         except Exception as e:
             print(f"Error checking existing user: {e}")
-        
-        # Create user
-        import uuid
-        import hashlib
         
         user_id = str(uuid.uuid4())
         hashed_password = hashlib.sha256(body['password'].encode()).hexdigest()
@@ -143,7 +139,6 @@ def handle_login(event, headers):
         user = response['Items'][0]
         
         # Verify password
-        import hashlib
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
         
         if user['password'] != hashed_password:
@@ -152,9 +147,6 @@ def handle_login(event, headers):
                 'headers': headers,
                 'body': json.dumps({'error': 'Invalid credentials'})
             }
-        
-        # Create JWT token (simplified)
-        import time
         
         payload = {
             'sub': user['email'],

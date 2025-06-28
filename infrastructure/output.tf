@@ -25,7 +25,6 @@ output "s3_bucket_name" {
 output "lambda_functions" {
   description = "Lambda function names"
   value = {
-    auth       = aws_lambda_function.auth_handler.function_name
     loans      = aws_lambda_function.loans_handler.function_name
     repayments = aws_lambda_function.repayments_handler.function_name
   }

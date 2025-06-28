@@ -39,22 +39,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const checkAuthState = async () => {
     try {
       setLoading(true);
-      console.log("🔍 Checking auth state with Amplify...");
 
       const isAuthenticated = await cognitoAuthService.isAuthenticated();
 
       if (isAuthenticated) {
         const currentUser = await cognitoAuthService.getCurrentUser();
         setUser(currentUser);
-        console.log("✅ User is authenticated:", currentUser.email);
       } else {
-        setUser(null); // Ensure user is null if not authenticated
-        console.log("❌ User is not authenticated");
+        setUser(null);
       }
     } catch (error: any) {
-      console.error("❌ Auth check failed:", error);
-      setUser(null); // Ensure user is null on error
-      // The cognitoAuthService.getCurrentUser() now handles internal logout on error
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -64,16 +59,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       setError(null);
-      console.log("🔐 Attempting login for:", email);
 
       await cognitoAuthService.login(email, password);
       const currentUser = await cognitoAuthService.getCurrentUser();
 
       setUser(currentUser);
-      console.log("✅ Login successful, redirecting to dashboard");
       navigate("/dashboard");
     } catch (error: any) {
-      console.error("❌ Login failed:", error.message);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -88,7 +80,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       setError(null);
-      console.log("📝 Attempting registration for:", email);
 
       const result = await cognitoAuthService.register(
         email,
@@ -97,18 +88,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       );
 
       if (result.needsConfirmation) {
-        console.log("📧 Registration successful, needs email confirmation");
         setNeedsConfirmation(true);
         setPendingEmail(email);
-        // Navigate to login page, where ConfirmSignUpForm will be rendered
-        navigate("/register"); // Navigate to register page to show confirmation form
+        navigate("/register");
       } else {
-        console.log("✅ Registration successful, auto-confirmed");
-        // Auto-login if no confirmation needed (rare for email/password flow)
         await login(email, password);
       }
     } catch (error: any) {
-      console.error("❌ Registration failed:", error.message);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -119,7 +105,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       setError(null);
-      console.log("📧 Confirming signup for:", email);
 
       await cognitoAuthService.confirmSignUp(email, code);
 
@@ -127,10 +112,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setNeedsConfirmation(false);
       setPendingEmail(null);
 
-      console.log("✅ Email confirmed, redirecting to login");
       navigate("/login");
     } catch (error: any) {
-      console.error("❌ Confirmation failed:", error.message);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -141,12 +124,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       setError(null);
-      console.log("📨 Resending confirmation code to:", email);
 
       await cognitoAuthService.resendConfirmationCode(email);
-      console.log("✅ Confirmation code resent");
     } catch (error: any) {
-      console.error("❌ Resend failed:", error.message);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -154,7 +134,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const logout = async () => {
-    console.log("🚪 Logging out...");
     await cognitoAuthService.logout();
     setUser(null);
     setNeedsConfirmation(false);

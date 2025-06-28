@@ -147,7 +147,7 @@ class CognitoAuthService {
   async isAuthenticated(): Promise<boolean> {
     try {
       const { tokens } = await fetchAuthSession()
-      return !!tokens?.accessToken // Check for the presence of an access token
+      return !!tokens?.accessToken
     } catch (error) {
       return false
     }
