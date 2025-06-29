@@ -171,6 +171,55 @@ class CognitoAuthService {
     }
   }
 
+  async getIdToken(): Promise<string | null> {
+    try {
+      const session = await fetchAuthSession()
+      return session.tokens?.idToken?.toString() || null
+    } catch (error) {
+      console.error("Error getting ID token:", error)
+      return null
+    }
+  }
+
+  
+  async compareTokens(): Promise<void> {
+    try {
+      const session = await fetchAuthSession()
+      
+      if (!session.tokens) {
+        console.error("No tokens available")
+        return
+      }
+      
+      const accessToken = session.tokens.accessToken?.toString()
+      const idToken = session.tokens.idToken?.toString()
+      
+      if (accessToken) {
+        const accessPayload = JSON.parse(atob(accessToken.split('.')[1]))
+        console.debug("Access Token payload:", {
+          token_use: accessPayload.token_use,
+          client_id: accessPayload.client_id,
+          username: accessPayload.username,
+          exp: new Date(accessPayload.exp * 1000).toLocaleString(),
+          iss: accessPayload.iss
+        })
+      }
+      
+      if (idToken) {
+        const idPayload = JSON.parse(atob(idToken.split('.')[1]))
+        console.debug("ID Token payload:", {
+          token_use: idPayload.token_use,
+          client_id: idPayload.client_id,
+          email: idPayload.email,
+          exp: new Date(idPayload.exp * 1000).toLocaleString(),
+          iss: idPayload.iss
+        })
+      }
+    } catch (error) {
+      console.error("Error comparing tokens:", error)
+    }
+  }
+
   private getErrorMessage(error: any): string {
     const errorMessage = error.message || "An unexpected error occurred"
 
