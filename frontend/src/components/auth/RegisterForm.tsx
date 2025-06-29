@@ -105,7 +105,7 @@ export default function RegisterForm() {
               value={fullName}
               onChange={handleNameChange}
               className="appearance-none block w-full px-3 py-2 border border-gray-700 bg-gray-800/70 rounded-md shadow-sm placeholder-gray-500 text-white focus:outline-none focus:ring-accent-400 focus:border-accent-400 transition-colors duration-200 sm:text-sm"
-              placeholder="YOUR NAME"
+              placeholder="Enter Your Name"
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-3">
               <i className="fas fa-user text-gray-400"></i>
@@ -132,7 +132,7 @@ export default function RegisterForm() {
               className={`appearance-none block w-full px-3 py-2 border ${
                 isEmailValid ? "border-gray-700" : "border-red-500"
               } bg-gray-800/70 rounded-md shadow-sm placeholder-gray-500 text-white focus:outline-none focus:ring-accent-400 focus:border-accent-400 transition-colors duration-200 sm:text-sm`}
-              placeholder="you@example.com"
+              placeholder="email@example.com"
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-3">
               <i
