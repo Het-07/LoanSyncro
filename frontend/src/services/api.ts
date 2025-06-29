@@ -17,16 +17,14 @@ const api: AxiosInstance = axios.create({
 // Request interceptor for adding Cognito access token
 api.interceptors.request.use(
   async (config) => {
-    const accessToken = await cognitoAuthService.getAccessToken()
-    if (accessToken) {
-      // Try removing "Bearer " prefix or changing format
-      // Option 1: No Bearer prefix
-      config.headers.Authorization = accessToken
-      
-      // Option 2: Different case
-      // config.headers.Authorization = `bearer ${accessToken}`
-      
-      console.log(`📡 Modified auth header for ${config.method?.toUpperCase()} request to: ${config.url}`)
+    // Use idToken instead of accessToken
+    const idToken = await cognitoAuthService.getIdToken()
+    if (idToken) {
+      // Format the token as expected by API Gateway
+      config.headers.Authorization = `Bearer ${idToken}`
+      console.log(`📡 Using ID token for ${config.method?.toUpperCase()} request to: ${config.url}`)
+    } else {
+      console.warn(`⚠️ No ID token available for ${config.method?.toUpperCase()} request to: ${config.url}`)
     }
     return config
   },
