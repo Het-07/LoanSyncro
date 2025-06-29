@@ -21,14 +21,6 @@ resource "aws_cognito_user_pool" "main" {
     email_subject        = "Your LoanSyncro Verification Code"
   }
 
-  # Add standard attribute 'name' to the schema
-  schema {
-    attribute_data_type = "String"
-    name                = "name"  # Add this to include the 'name' attribute
-    required            = false
-    mutable             = true
-  }
-
   # Custom attributes
   schema {
     attribute_data_type = "String"
@@ -106,8 +98,8 @@ resource "aws_cognito_user_pool_client" "main" {
   ]
 
   # Ensure tokens include custom attributes
-  # read_attributes = ["email", "name", "custom:user_id"]  
-  # write_attributes = ["email", "name", "custom:user_id"]  
+  # read_attributes = ["email", "custom:user_id"]  
+  # write_attributes = ["email", "custom:user_id"]  
 
   depends_on = [aws_cognito_user_pool.main]  # Ensure User Pool is created first
 }

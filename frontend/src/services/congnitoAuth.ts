@@ -156,8 +156,17 @@ class CognitoAuthService {
   async getAccessToken(): Promise<string | null> {
     try {
       const session = await fetchAuthSession()
+      
+      // Debug the available tokens to see what's happening
+      console.debug("Available tokens:", {
+        hasAccessToken: !!session.tokens?.accessToken,
+        hasIdToken: !!session.tokens?.idToken,
+      })
+      
+      // Make sure you're specifically using the ACCESS token
       return session.tokens?.accessToken?.toString() || null
     } catch (error) {
+      console.error("Error getting access token:", error)
       return null
     }
   }
