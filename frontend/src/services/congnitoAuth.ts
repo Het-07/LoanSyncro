@@ -102,8 +102,6 @@ class CognitoAuthService {
         accessToken: session.tokens.accessToken.toString(),
         idToken: session.tokens.idToken?.toString(),
         expiresIn: session.tokens.accessToken.payload?.exp || 7200, // Use payload expiration or default to 0
-        // refreshToken: session.tokens.refreshToken?.toString(), 
-        // expiresIn: session.tokens.accessToken.expiresIn,
       }
 
       return tokens

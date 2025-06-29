@@ -10,7 +10,7 @@ def loans_handler(event, context):
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     }
     
     try:
@@ -218,7 +218,7 @@ def repayments_handler(event, context):
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     }
     
     try:
