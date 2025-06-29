@@ -54,7 +54,7 @@ def loans_handler(event, context):
                 'id': str(uuid.uuid4()),
                 'user_id': user_id,
                 'title': body.get('title'),
-                'amount': principal,
+                'amount': Decimal(str(principal)),
                 'interest_rate': Decimal(str(body.get('interest_rate', 0))),
                 'term_months': term,
                 'start_date': body.get('start_date', datetime.utcnow().isoformat()),
@@ -157,7 +157,7 @@ def loans_handler(event, context):
                 UpdateExpression=update_expression,
                 ExpressionAttributeValues={
                     ':title': body.get('title', loan['title']),
-                    ':amount': principal,
+                    ':amount': Decimal(str(principal)),
                     ':interest_rate': Decimal(str(body.get('interest_rate', loan['interest_rate']))),
                     ':term_months': term,
                     ':start_date': body.get('start_date', loan['start_date']),
