@@ -3,6 +3,8 @@ import boto3
 import os
 import uuid
 from datetime import datetime
+from decimal import Decimal
+
 
 def loans_handler(event, context):
     """Loans handler with full CRUD operations"""
@@ -53,13 +55,13 @@ def loans_handler(event, context):
                 'user_id': user_id,
                 'title': body.get('title'),
                 'amount': principal,
-                'interest_rate': float(body.get('interest_rate', 0)),
+                'interest_rate': Decimal(str(body.get('interest_rate', 0))),
                 'term_months': term,
                 'start_date': body.get('start_date', datetime.utcnow().isoformat()),
                 'description': body.get('description', ''),
                 'created_at': datetime.utcnow().isoformat(),
-                'total_amount': float(total_amount),
-                'monthly_payment': float(monthly_payment),
+                'total_amount': Decimal(str(total_amount)),
+                'monthly_payment': Decimal(str(monthly_payment)),
                 'status': 'active'
             }
             
@@ -156,12 +158,12 @@ def loans_handler(event, context):
                 ExpressionAttributeValues={
                     ':title': body.get('title', loan['title']),
                     ':amount': principal,
-                    ':interest_rate': float(body.get('interest_rate', loan['interest_rate'])),
+                    ':interest_rate': Decimal(str(body.get('interest_rate', loan['interest_rate']))),
                     ':term_months': term,
                     ':start_date': body.get('start_date', loan['start_date']),
                     ':description': body.get('description', loan['description']),
-                    ':total_amount': float(total_amount),
-                    ':monthly_payment': float(monthly_payment)
+                    ':total_amount': Decimal(str(total_amount)),
+                    ':monthly_payment': Decimal(str(monthly_payment))
                 }
             )
             
@@ -301,7 +303,7 @@ def repayments_handler(event, context):
                 'id': repayment_id,
                 'loan_id': body.get('loan_id'),
                 'user_id': user_id,
-                'amount': float(body.get('amount')),
+                'amount': Decimal(str(body.get('amount'))),
                 'payment_date': body.get('payment_date', datetime.utcnow().isoformat()),
                 'notes': body.get('notes', ''),
                 'created_at': datetime.utcnow().isoformat()
