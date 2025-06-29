@@ -17,13 +17,14 @@ const api: AxiosInstance = axios.create({
 // Request interceptor for adding Cognito access token
 api.interceptors.request.use(
   async (config) => {
-    // Make this async to await the token
     const accessToken = await cognitoAuthService.getAccessToken() 
     if (accessToken) {
+      // Ensure proper formatting of the Authorization header
       config.headers.Authorization = `Bearer ${accessToken}`
+      console.log(`📡 Auth header set for ${config.method?.toUpperCase()} request to: ${config.url}`)
+    } else {
+      console.warn(`⚠️ No auth token for ${config.method?.toUpperCase()} request to: ${config.url}`)
     }
-
-    console.log(`📡 ${config.method?.toUpperCase()} request to:`, config.url)
     return config
   },
   (error) => Promise.reject(error),
