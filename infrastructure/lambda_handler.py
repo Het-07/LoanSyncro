@@ -5,6 +5,12 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, decimal.Decimal):
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
+
 
 def loans_handler(event, context):
     """Loans handler with full CRUD operations"""
@@ -69,7 +75,7 @@ def loans_handler(event, context):
             return {
                 'statusCode': 201,
                 'headers': headers,
-                'body': json.dumps(loan_data)
+                'body': json.dumps(loan_data, cls=DecimalEncoder)
             }
         
         elif method == 'GET' and path[-1] == 'loans':
@@ -81,7 +87,7 @@ def loans_handler(event, context):
             return {
                 'statusCode': 200,
                 'headers': headers,
-                'body': json.dumps(response.get('Items', []))
+                'body': json.dumps(response.get('Items', []), cls=DecimalEncoder)
             }
         
         elif method == 'GET' and path[-2] == 'loans':
@@ -106,7 +112,7 @@ def loans_handler(event, context):
             return {
                 'statusCode': 200,
                 'headers': headers,
-                'body': json.dumps(loan)
+                'body': json.dumps(loan, cls=DecimalEncoder)
             }
         
         elif method == 'PUT' and path[-2] == 'loans':
@@ -171,7 +177,7 @@ def loans_handler(event, context):
             return {
                 'statusCode': 200,
                 'headers': headers,
-                'body': json.dumps(response.get('Item'))
+                'body': json.dumps(response.get('Item'), cls=DecimalEncoder)
             }
         
         elif method == 'DELETE' and path[-2] == 'loans':
@@ -315,7 +321,7 @@ def repayments_handler(event, context):
             return {
                 'statusCode': 201,
                 'headers': headers,
-                'body': json.dumps(repayment_data)
+                'body': json.dumps(repayment_data, cls=DecimalEncoder)
             }
         
         elif method == 'GET' and path[-1] == 'repayments':
@@ -341,7 +347,7 @@ def repayments_handler(event, context):
             return {
                 'statusCode': 200,
                 'headers': headers,
-                'body': json.dumps(all_repayments)
+                'body': json.dumps(all_repayments, cls=DecimalEncoder)
             }
         
         elif method == 'GET' and path[-2] == 'repayments' and path[-1] != 'summary':
@@ -375,7 +381,7 @@ def repayments_handler(event, context):
             return {
                 'statusCode': 200,
                 'headers': headers,
-                'body': json.dumps(loan_repayments)
+                'body': json.dumps(loan_repayments, cls=DecimalEncoder)
             }
         
         elif method == 'GET' and path[-1] == 'summary':
@@ -412,7 +418,7 @@ def repayments_handler(event, context):
             return {
                 'statusCode': 200,
                 'headers': headers,
-                'body': json.dumps(summary)
+                'body': json.dumps(summary, cls=DecimalEncoder)
             }
         
         else:
