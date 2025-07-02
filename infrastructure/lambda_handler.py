@@ -4,6 +4,7 @@ import os
 import uuid
 from datetime import datetime
 from decimal import Decimal
+import decimal
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
