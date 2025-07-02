@@ -12,6 +12,16 @@ class DecimalEncoder(json.JSONEncoder):
             return float(obj)
         return super(DecimalEncoder, self).default(obj)
 
+def convert_dynamodb_item(item):
+    """Convert DynamoDB item with potential Decimal values to JSON-serializable object"""
+    if isinstance(item, dict):
+        return {k: convert_dynamodb_item(v) for k, v in item.items()}
+    elif isinstance(item, list):
+        return [convert_dynamodb_item(i) for i in item]
+    elif isinstance(item, Decimal):
+        return float(item)
+    else:
+        return item
 
 def loans_handler(event, context):
     """Loans handler with full CRUD operations"""
@@ -266,13 +276,17 @@ def repayments_handler(event, context):
                 ExpressionAttributeValues={':loan_id': loan_id}
             )
             
-            total_repaid = sum(
-                float(repayment.get('amount', 0)) 
-                for repayment in repayments_response.get('Items', [])
-            )
+            total_repaid = Decimal('0')
+            for repayment in repayments_response.get('Items', []):
+                amount = repayment.get('amount', 0)
+                if not isinstance(amount, Decimal):
+                    amount = Decimal(str(amount))
+                total_repaid += amount
+            
+            loan_total = Decimal(str(loan.get('total_amount', 0))) if not isinstance(loan.get('total_amount'), Decimal) else loan.get('total_amount', 0)
             
             new_status = loan.get('status', 'active')
-            if total_repaid >= float(loan.get('total_amount', 0)):
+            if total_repaid >= loan_total:
                 new_status = 'paid'
             elif total_repaid > 0:
                 new_status = 'active'
