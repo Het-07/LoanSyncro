@@ -69,3 +69,9 @@ variable "log_retention_days" {
   type        = number
   default     = 14
 }
+
+variable "notification_email" {
+  description = "Email address to receive SNS notifications"
+  type        = string
+}
+

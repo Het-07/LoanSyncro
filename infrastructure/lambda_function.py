@@ -6,6 +6,9 @@ from datetime import datetime
 from decimal import Decimal
 import decimal
 
+sns = boto3.client("sns", region_name=os.environ.get("AWS_REGION", "us-east-1"))
+SNS_TOPIC_ARN = os.environ.get("SNS_TOPIC_ARN")
+
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, decimal.Decimal):
@@ -83,6 +86,28 @@ def loans_handler(event, context):
             }
             
             loans_table.put_item(Item=loan_data)
+
+            # SNS Notification: Loan Created
+            if SNS_TOPIC_ARN:
+                try:
+                    sns.publish(
+                    TopicArn=SNS_TOPIC_ARN,
+                    Subject="📄 Loan Created Successfully!",
+                    Message=(
+                        "🎉 Congratulations!\n\n"
+                        "Your loan has been created successfully.\n\n"
+                        f"Loan Title: {loan_data.get('title')}\n"
+                        f"Amount: ${loan_data.get('amount')}\n"
+                        f"Interest Rate: {loan_data.get('interest_rate')}%\n"
+                        f"Term: {loan_data.get('term_months')} months\n"
+                        f"Start Date: {loan_data.get('start_date')}\n"
+                        "Status: Active\n\n"
+                        "Thank you for using LoanSyncro! 😊"
+                    )
+                )
+                except Exception as snse:
+                    print("SNS publish failed:", str(snse))
+        
             return {
                 'statusCode': 201,
                 'headers': headers,
@@ -263,7 +288,6 @@ def repayments_handler(event, context):
         method = event.get('httpMethod', '')
         
         def update_loan_status(loan_id):
-            """Update loan status based on total repayments"""
             loan_response = loans_table.get_item(Key={'id': loan_id})
             loan = loan_response.get('Item')
             
@@ -298,6 +322,24 @@ def repayments_handler(event, context):
                     ExpressionAttributeNames={'#status': 'status'},
                     ExpressionAttributeValues={':status': new_status}
                 )
+
+                # SNS Notification: Loan Paid Off
+            if SNS_TOPIC_ARN and new_status == "paid":
+                try:
+                    sns.publish(
+                        TopicArn=SNS_TOPIC_ARN,
+                        Subject="🎉 Congratulations! Loan Paid Off!",
+                        Message=(
+                            "🏆 Congratulations!\n\n"
+                            f"Your loan '{loan.get('title', '')}' has been *fully paid off*!\n"
+                            "We appreciate your timely repayments.\n\n"
+                            "Thank you for choosing LoanSyncro! 🎊"
+                        )
+                    )
+
+                except Exception as snse:
+                    print("SNS publish failed:", str(snse))
+
         
         if method == 'POST' and path[-1] == 'repayments':
             body = json.loads(event.get('body', '{}'))
@@ -332,7 +374,36 @@ def repayments_handler(event, context):
             
             repayments_table.put_item(Item=repayment_data)
             update_loan_status(body.get('loan_id'))
-            
+
+            # SNS Notification: Repayment Made
+            if SNS_TOPIC_ARN:
+                try:
+                    loan_response = loans_table.get_item(Key={'id': body.get('loan_id')})
+                    loan = loan_response.get('Item')
+                    total_amount = float(loan.get('total_amount', 0))
+                    repayments_response = repayments_table.query(
+                        IndexName='loan-id-index',
+                        KeyConditionExpression='loan_id = :loan_id',
+                        ExpressionAttributeValues={':loan_id': body.get('loan_id')}
+                    )
+                    total_repaid = sum(float(rep.get('amount', 0)) for rep in repayments_response.get('Items', []))
+                    outstanding = max(0, total_amount - total_repaid)
+                    sns.publish(
+                        TopicArn=SNS_TOPIC_ARN,
+                        Subject="💸 Loan Repayment Received!",
+                        Message=(
+                            "✅ Payment Received!\n\n"
+                            f"Loan Title: {loan.get('title', '')}\n"
+                            f"Repayment Amount: ${repayment_data.get('amount')}\n"
+                            f"Total Paid So Far: ${total_repaid}\n"
+                            f"Outstanding Balance: ${outstanding}\n"
+                            "Thank you for your payment! 🏦"
+                        )
+                    )
+
+                except Exception as snse:
+                    print("SNS publish failed:", str(snse))
+
             return {
                 'statusCode': 201,
                 'headers': headers,

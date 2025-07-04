@@ -2,16 +2,9 @@
 data "archive_file" "lambda_zip" {
   type        = "zip"
   output_path = "${path.module}/lambda_function.zip"
-  
-  source {
-    content = templatefile("${path.module}/lambda_handler.py", {
-      users_table_name      = aws_dynamodb_table.users.name
-      loans_table_name      = aws_dynamodb_table.loans.name
-      repayments_table_name = aws_dynamodb_table.repayments.name
-    })
-    filename = "lambda_function.py"
-  }
+  source_file = "${path.module}/lambda_function.py"
 }
+
 
 # Lambda Function: Authentication Handler
 resource "aws_lambda_function" "auth_handler" {

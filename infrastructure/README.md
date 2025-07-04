@@ -13,7 +13,7 @@ This folder contains the Terraform configuration for deploying LoanSyncro to AWS
 - `monitoring.tf` - CloudWatch logs, alarms, and SNS alerts
 - `outputs.tf` - Important values for other configurations
 - `terraform.tfvars` - Configuration values
-- `lambda_handler.py` - Lambda function handlers
+- `lambda_function.py` - Lambda function handlers
 
 ## 🚀 Quick Start
 

@@ -32,6 +32,12 @@ resource "aws_cloudwatch_log_group" "repayments_logs" {
   })
 }
 
+resource "aws_sns_topic_subscription" "alerts_email" {
+  topic_arn = aws_sns_topic.alerts.arn
+  protocol  = "email"
+  endpoint  = var.notification_email   
+}
+
 # SNS Topic for alerts
 resource "aws_sns_topic" "alerts" {
   name              = "${local.name_prefix}-alerts"
