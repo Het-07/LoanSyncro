@@ -6,7 +6,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.116.1-green?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Terraform](https://img.shields.io/badge/Terraform-IaC-purple?logo=terraform)](https://www.terraform.io/)
 
-A comprehensive, serverless personal loan management system built on AWS cloud infrastructure following the Well-Architected 6-pillars Framework. LoanSyncro enables users to efficiently track loans, manage repayments, and monitor their financial obligations through a modern, responsive web interface.
+A comprehensive, serverless personal loan management system built on AWS cloud infrastructure following the Well-Architected 6-pillars Framework. LoanSyncro enables users to efficiently track loans, manage repayments, and monitor their financial obligations through a modern, responsive web interface with a proper notification system.
 
 ## 🏗️ Architecture Overview
 
